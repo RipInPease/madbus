@@ -8,6 +8,18 @@ pub(crate) mod serial_port;
 pub mod function_codes;
 
 
+/// The master unit in the modbus line
+/// 
+mod master;
+pub use master::Master;
+
+
+/// A slave unit in the modbus line
+/// 
+mod slave;
+pub use slave::Slave;
+
+
 /// Create a CRC based on input bytes
 /// 
 /// https://www.modbus.org/file/secure/modbusoverserial.pdf page 39
