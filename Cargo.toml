@@ -2,6 +2,9 @@
 name = "madbus"
 version = "0.1.0"
 edition = "2024"
+description = "A crate to handle the modbus protocol over a serial line"
+homepage = "https://github.com/ripInPease/madbus"
+repository = "https://github.com/ripInPease/madbus"
 license = "MIT OR Apache-2.0"
 
 [dependencies]

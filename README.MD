@@ -1,0 +1,1 @@
+A crate to handle the modbus protocol over a serial line
