@@ -181,8 +181,4 @@ impl Read for SerialPort {
     fn read(&mut self, bfr: &mut[u8]) -> IOResult<usize> {
         self.file.read(bfr)
     }
-
-    fn read_exact(&mut self, bfr: &mut [u8]) -> IOResult<()> {
-        self.file.read_exact(bfr)
-    }
 }
