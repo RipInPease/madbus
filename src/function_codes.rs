@@ -88,10 +88,10 @@ impl Into<Vec<u8>> for FunctionCode {
 #[derive(Clone, Debug)]
 pub struct ReadCoils {
     // Which addr to start reading at
-    pub start   : u16,
+    start   : u16,
 
     // How many coils to read
-    pub count   : u16
+    count   : u16
 }
 
 new_function!(
@@ -144,10 +144,10 @@ impl Into<Vec<u8>> for ReadCoils {
 #[derive(Clone, Debug)]
 pub struct ReadDI {
     // Which addr to start reading at
-    pub start   : u16,
+    start   : u16,
     
     // How many inputs to read
-    pub count   : u16,
+    count   : u16,
 }
 
 new_function!(
@@ -200,10 +200,10 @@ impl Into<Vec<u8>> for ReadDI {
 #[derive(Clone, Debug)]
 pub struct ReadHolding {
     // Which addr to start reading at
-    pub start   : u16,
+    start   : u16,
 
     // How many registers to read
-    pub count   : u16,
+    count   : u16,
 }
 
 new_function!(
@@ -256,10 +256,10 @@ impl Into<Vec<u8>> for ReadHolding {
 #[derive(Clone, Debug)]
 pub struct ReadInput {
     // The addr to start reading at
-    pub start   : u16,
+    start   : u16,
 
     // How many registers to read
-    pub count   : u16,
+    count   : u16,
 }
 
 new_function!(
