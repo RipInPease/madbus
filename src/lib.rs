@@ -1,3 +1,6 @@
+use std::io::Read;
+
+
 /// Basic handling of creating and using a serial port
 /// 
 pub mod serial_port;
@@ -6,6 +9,7 @@ pub mod serial_port;
 /// Horror lies beyond these walls
 /// 
 pub mod function_codes;
+use crate::function_codes::FunctionCode;
 
 
 /// The master unit in the modbus line
@@ -20,14 +24,55 @@ mod slave;
 pub use slave::Slave;
 
 
+/// Reads from a reader to get self.
+/// Return None if format was wrong or error occured
+/// 
+pub trait ReadGet {
+    fn read_get(reader: &mut impl Read) -> Option<Self> 
+    where Self: Sized;
+}
+
+
 /// A command to send from the master to a slave device
 /// 
+#[derive(Clone, Debug)]
 pub struct Command {
     /// Which slave the command is to be sent to
     addr    : u8,
 
     /// The command to be sent to the slave
-    cmd     : function_codes::FunctionCode, 
+    cmd     : FunctionCode, 
+}
+
+
+impl Command {
+    /// Creates a new instance with given arguments
+    /// 
+    pub fn new(addr: u8, cmd: FunctionCode) -> Self {
+        Self{ addr, cmd }
+    }
+}
+
+
+impl ReadGet for Command {
+    fn read_get(reader: &mut impl Read) -> Option<Self> 
+    where Self: Sized 
+    {
+        let mut bfr = [0];
+
+        match reader.read(&mut bfr) {
+            Ok(count)   => if count < 1 { return None },
+            Err(_)      => return None
+        };
+
+        let addr = bfr[0];
+        let cmd = FunctionCode::read_get(reader)?;
+
+        Some(Self{
+            addr, 
+            cmd
+        })
+    }
 }
 
 

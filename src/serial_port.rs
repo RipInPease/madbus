@@ -31,7 +31,7 @@ impl SerialPortBuilder {
     /// 
     pub fn new() -> Self {
         Self { 
-            file        : "/dev/sttyS0".to_string(),
+            file        : "/dev/ttyS0".to_string(),
             baud        : 19200, 
             parity      : Parity::Even,
             stop_bits   : StopBits::One,
@@ -91,7 +91,7 @@ impl SerialPortBuilder {
 
     /// Opens the serial port with given settings. Returns SerialPort
     /// 
-    pub fn open(self) -> IOResult<SerialPort> {
+    pub fn open(&mut self) -> IOResult<SerialPort> {
         use std::process::Command;
 
         let mut port_settings = Command::new("stty");
@@ -180,5 +180,9 @@ impl Write for SerialPort {
 impl Read for SerialPort {
     fn read(&mut self, bfr: &mut[u8]) -> IOResult<usize> {
         self.file.read(bfr)
+    }
+
+    fn read_exact(&mut self, bfr: &mut [u8]) -> IOResult<()> {
+        self.file.read_exact(bfr)
     }
 }
