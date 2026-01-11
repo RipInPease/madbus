@@ -1,3 +1,38 @@
+/// Enum containing all function codes
+/// 
+#[derive(Clone, Debug)]
+pub enum FunctionCode {
+    ReadCoils(ReadCoils),
+    ReadDi(ReadDI),
+    ReadHolding(ReadHolding),
+    ReadInput(ReadInput),
+}
+
+
+impl Into<Vec<u8>> for FunctionCode {
+    fn into(self) -> Vec<u8> {
+        let code = match self {
+            Self::ReadCoils(_)      => 1,
+            Self::ReadDi(_)         => 2,
+            Self::ReadHolding(_)    => 3,
+            Self::ReadInput(_)      => 4,
+        };
+
+        let data: Vec<u8> = match self {
+            Self::ReadCoils(code)       => code.into(),
+            Self::ReadDi(code)              => code.into(),
+            Self::ReadHolding(code)     => code.into(),
+            Self::ReadInput(code)       => code.into(),
+        };
+
+        let mut v = Vec::with_capacity(data.len()+1);
+        v.push(code);
+        v.extend_from_slice(&data);
+        v
+    }
+}
+
+
 macro_rules! new_function {
     ( $t:ty, $( $field:ident : $ty:ty ),* ) => {
 
@@ -18,6 +53,7 @@ macro_rules! new_function {
 /// 
 /// Read Coils
 /// 
+#[derive(Clone, Debug)]
 pub struct ReadCoils {
     // Which addr to start reading at
     start   : u16,
@@ -48,6 +84,7 @@ impl Into<Vec<u8>> for ReadCoils {
 /// 
 /// Read Discrete Inputs
 /// 
+#[derive(Clone, Debug)]
 pub struct ReadDI {
     // Which addr to start reading at
     start   : u16,
@@ -79,6 +116,7 @@ impl Into<Vec<u8>> for ReadDI {
 /// 
 /// Read Holding Register
 /// 
+#[derive(Clone, Debug)]
 pub struct ReadHolding {
     // Which addr to start reading at
     start   : u16,
@@ -110,6 +148,7 @@ impl Into<Vec<u8>> for ReadHolding {
 /// 
 /// Read Input Registers
 /// 
+#[derive(Clone, Debug)]
 pub struct ReadInput {
     // The addr to start reading at
     start   : u16,

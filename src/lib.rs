@@ -20,6 +20,33 @@ mod slave;
 pub use slave::Slave;
 
 
+/// A command to send from the master to a slave device
+/// 
+pub struct Command {
+    /// Which slave the command is to be sent to
+    addr    : u8,
+
+    /// The command to be sent to the slave
+    cmd     : function_codes::FunctionCode, 
+}
+
+
+impl Into<Vec<u8>> for Command {
+    fn into(self) -> Vec<u8> {
+        let cmd: Vec<u8> = self.cmd.into();
+        
+        let mut data = Vec::with_capacity(cmd.len() + 3);
+        data.push(self.addr);
+        data.extend_from_slice(&cmd);
+
+        let crc = crc_gen(&data);
+        data.extend_from_slice(&crc);
+        
+        data
+    }
+}
+
+
 /// Create a CRC based on input bytes
 /// 
 /// https://www.modbus.org/file/secure/modbusoverserial.pdf page 39
