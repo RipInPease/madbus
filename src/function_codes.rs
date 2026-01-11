@@ -2,6 +2,11 @@ use std::io::Read;
 use crate::ReadGet;
 
 
+/// Responses sent by the slave
+/// 
+pub mod responses;
+
+
 macro_rules! new_function {
     ( $t:ty, $( $field:ident : $ty:ty ),* ) => {
 
