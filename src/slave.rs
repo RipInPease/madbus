@@ -10,6 +10,15 @@ pub struct Slave {
 }
 
 
+impl Slave {
+    /// Creates a new slave device with given serial port and slave address
+    /// 
+    pub fn new(port: SerialPort, addr: u8) -> Self {
+        Self{ port, addr }
+    }
+}
+
+
 impl Read for Slave {
     fn read(&mut self, bfr: &mut[u8]) -> IOResult<usize> {
         self.port.read(bfr)

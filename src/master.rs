@@ -9,12 +9,20 @@ pub struct Master {
 }
 
 
+impl Master {
+    /// Creates a new master device with given serial port
+    /// 
+    pub fn new(port: SerialPort) -> Self {
+        Self{ port }
+    }
+}
+
+
 impl Read for Master {
     fn read(&mut self, bfr: &mut[u8]) -> IOResult<usize> {
         self.port.read(bfr)
     }
 }
-
 
 
 impl Write for Master {

@@ -9,15 +9,24 @@ pub enum FunctionCode {
 }
 
 
-impl Into<Vec<u8>> for FunctionCode {
-    fn into(self) -> Vec<u8> {
-        let code = match self {
+impl FunctionCode {
+    /// Returns the function code of the FunctionCode
+    /// 
+    pub fn function_code(&self) -> u8 {
+        match self {
             Self::ReadCoils(_)      => 1,
             Self::ReadDi(_)         => 2,
             Self::ReadHolding(_)    => 3,
             Self::ReadInput(_)      => 4,
-        };
+        }
+    }
+}
 
+
+impl Into<Vec<u8>> for FunctionCode {
+    fn into(self) -> Vec<u8> {
+        let code = self.function_code();
+        
         let data: Vec<u8> = match self {
             Self::ReadCoils(code)       => code.into(),
             Self::ReadDi(code)              => code.into(),

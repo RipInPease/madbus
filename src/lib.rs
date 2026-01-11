@@ -1,6 +1,6 @@
 /// Basic handling of creating and using a serial port
 /// 
-pub(crate) mod serial_port;
+pub mod serial_port;
 
 
 /// Horror lies beyond these walls
@@ -49,11 +49,11 @@ impl Into<Vec<u8>> for Command {
 
 /// Create a CRC based on input bytes
 /// 
-/// https://www.modbus.org/file/secure/modbusoverserial.pdf page 39
+/// <https://www.modbus.org/file/secure/modbusoverserial.pdf> page 39
 /// for reference
 /// 
 pub fn crc_gen(bytes: &[u8]) -> [u8; 2] {
-    let mut crc = u16::MAX;
+    let mut crc: u16 = 0xFFFF;
 
     for b in bytes {
         crc ^= *b as u16;
