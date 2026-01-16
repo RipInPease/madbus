@@ -1,6 +1,6 @@
 [package]
 name = "madbus"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "A crate to handle the modbus protocol over a serial line"
 homepage = "https://github.com/ripInPease/madbus"
