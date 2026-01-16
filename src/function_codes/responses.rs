@@ -2,6 +2,11 @@ use std::io::Read;
 use crate::ReadGet;
 
 
+/// A response sent from the slave to the master.
+/// 
+/// Contains the data of the response and the 
+/// 
+#[derive(Clone, Debug)]
 pub struct Response {
     /// The slave address who sent the response
     addr: u8,
@@ -25,7 +30,6 @@ impl ReadGet for Response {
         let data = ResponseData::read_get(reader)?;
 
         Some(Self{ addr, data })
-  
     }
 }
 
@@ -42,6 +46,9 @@ impl Into<Vec<u8>> for Response {
 }
 
 
+/// Contains the types of responses for the slave to send
+/// 
+#[derive(Clone, Debug)]
 pub enum ResponseData {
     ReadCoils(ReadCoilsResp),
     ReadDI(ReadDIResp),
