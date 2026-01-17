@@ -1,5 +1,10 @@
 use std::io::{Read, Write, Result as IOResult};
-use crate::{ReadGet, function_codes::FunctionCode, serial_port::SerialPort};
+use crate::{
+    ReadGet, 
+    crc_gen, 
+    function_codes::{FunctionCode, responses::{Response, ResponseData}}, 
+    serial_port::SerialPort
+};
 
 
 /// A slave unit in the modbus line
@@ -34,7 +39,40 @@ impl Slave {
         if bfr[0] != self.addr { return None }
 
 
-        FunctionCode::read_get(&mut self.port)
+        let cmd = FunctionCode::read_get(&mut self.port)?;
+
+        // Check Crc
+        let data: Vec<u8> = cmd.clone().into();
+
+        let mut bfr = [0; 2];
+        match self.read(&mut bfr) {
+            Ok(count)   => if count < 2 { return None },
+            Err(_)      => return None,
+        }
+
+        let crc_read = bfr;
+        let crc_generated = crc_gen(&data);
+
+        if crc_read != crc_generated {
+            return None
+        }
+
+        Some(cmd)
+    }
+
+
+    /// Send a response over the serial line
+    /// 
+    pub fn send_resp(&mut self, data: ResponseData) -> IOResult<()> {
+        let response = Response{ addr: self.addr, data };
+        let mut bytes: Vec<u8> = response.into();
+
+        let crc = crc_gen(&bytes);
+        bytes.extend_from_slice(&crc);
+
+        self.write(&bytes)?;
+
+        Ok(())
     }
 }
 

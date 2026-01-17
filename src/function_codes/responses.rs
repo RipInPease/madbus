@@ -9,10 +9,10 @@ use crate::ReadGet;
 #[derive(Clone, Debug)]
 pub struct Response {
     /// The slave address who sent the response
-    addr: u8,
+    pub(crate) addr: u8,
 
     /// The response itself
-    data: ResponseData
+    pub(crate) data: ResponseData
 }
 
 
