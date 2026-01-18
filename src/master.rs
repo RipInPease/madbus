@@ -56,7 +56,21 @@ impl Master {
 
 impl Read for Master {
     fn read(&mut self, bfr: &mut[u8]) -> IOResult<usize> {
-        self.port.read(bfr)
+        let mut count = 0;
+        let mut read_bytes: Vec<u8> = Vec::with_capacity(bfr.len());
+        let mut read_bfr = [0];
+
+        while count < bfr.len() && self.port.read(&mut read_bfr)? > 0 {
+            count += 1;
+            read_bytes.push(read_bfr[0]);
+        }
+
+        for i in 0..count {
+            let i = i as usize;
+            bfr[i] = read_bytes[i];
+        }
+
+        Ok(count)
     }
 }
 
