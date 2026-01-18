@@ -2,7 +2,8 @@ use std::io::{Read, Write, Result as IOResult};
 use crate::{
     ReadGet, 
     crc_gen, 
-    function_codes::{FunctionCode, responses::{Response, ResponseData}}, 
+    Command,
+    function_codes::responses::{Response, ResponseData}, 
     serial_port::SerialPort
 };
 
@@ -26,34 +27,22 @@ impl Slave {
     /// Read the port for incoming commands. 
     /// Returns None if either failed or no incoming commands
     /// 
-    pub fn read_port(&mut self) -> Option<FunctionCode> {
-        let mut bfr = [0];
+    pub fn read_cmd(&mut self) -> Option<Command> {
+        let cmd = Command::read_get(self)?;
+        
 
-        // Return none if there was nothing to be read or error occured
+        // Crc stuff
+        let mut bfr = [0;2];
         match self.read(&mut bfr) {
-            Ok(count)   => if count < 1 { return None },
-            Err(_)      => return None,
+            Ok(count) => if count < 2 { return None},
+            Err(_)    => return None,
         }
 
-        // Check command was meant for this slave
-        if bfr[0] != self.addr { return None }
+        let bytes: Vec<u8> = cmd.clone().into();
+        let len = bytes.len();
+        let crc_generated = crc_gen(&bytes[..len-2]);
 
-
-        let cmd = FunctionCode::read_get(&mut self.port)?;
-
-        // Check Crc
-        let data: Vec<u8> = cmd.clone().into();
-
-        let mut bfr = [0; 2];
-        match self.read(&mut bfr) {
-            Ok(count)   => if count < 2 { return None },
-            Err(_)      => return None,
-        }
-
-        let crc_read = bfr;
-        let crc_generated = crc_gen(&data);
-
-        if crc_read != crc_generated {
+        if bfr != crc_generated {
             return None
         }
 
