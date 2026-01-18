@@ -23,11 +23,7 @@ impl Master {
     /// Send a command over the serial line
     /// 
     pub fn send_cmd(&mut self, cmd: Command) -> IOResult<()> {
-        let mut bytes: Vec<u8> = cmd.into();
-
-        let crc = crc_gen(&bytes);
-        bytes.extend_from_slice(&crc);
-
+        let bytes: Vec<u8> = cmd.into();
         self.write(&bytes)?;
         Ok(())
     }
