@@ -1,5 +1,8 @@
 use std::io::{Read, Write, Result as IOResult};
+
+use crate::{ReadGet, Command, crc_gen};
 use crate::serial_port::SerialPort;
+use crate::function_codes::responses::Response;
 
 
 /// The master in the modbus line
@@ -14,6 +17,43 @@ impl Master {
     /// 
     pub fn new(port: SerialPort) -> Self {
         Self{ port }
+    }
+
+
+    /// Send a command over the serial line
+    /// 
+    pub fn send_cmd(&mut self, cmd: Command) -> IOResult<()> {
+        let mut bytes: Vec<u8> = cmd.into();
+
+        let crc = crc_gen(&bytes);
+        bytes.extend_from_slice(&crc);
+
+        self.write(&bytes)?;
+        Ok(())
+    }
+
+
+    /// Reads the port for incoming responses from slaves
+    /// 
+    pub fn read_resp(&mut self) -> Option<Response> {
+        let resp = Response::read_get(self)?;
+        let data: Vec<u8> = resp.clone().into();
+
+        // Check crc
+        let mut bfr = [0; 2];
+        match self.read(&mut bfr) {
+            Ok(count)   => if count < 2 { return None },
+            Err(_)      => return None,
+        }
+
+        let crc_read = bfr;
+        let crc_generated = crc_gen(&data);
+
+        if crc_read != crc_generated {
+            return None
+        }
+
+        Some(resp)
     }
 }
 
