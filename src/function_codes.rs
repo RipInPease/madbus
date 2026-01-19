@@ -51,11 +51,8 @@ impl ReadGet for FunctionCode {
                     Err(_)      => return None
                 }
 
-                let start = [bfr[0], bfr[1]];
-                let count = [bfr[2], bfr[3]];
-
-                let start = u16::from_be_bytes(start);
-                let count = u16::from_be_bytes(count);
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 Some(Self::ReadCoils { start, count })
             },
@@ -67,11 +64,8 @@ impl ReadGet for FunctionCode {
                     Err(_)      => return None
                 }
 
-                let start = [bfr[0], bfr[1]];
-                let count = [bfr[2], bfr[3]];
-
-                let start = u16::from_be_bytes(start);
-                let count = u16::from_be_bytes(count);
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 Some(Self::ReadDI { start, count })
             },
@@ -83,11 +77,8 @@ impl ReadGet for FunctionCode {
                     Err(_)      => return None
                 }
 
-                let start = [bfr[0], bfr[1]];
-                let count = [bfr[2], bfr[3]];
-
-                let start = u16::from_be_bytes(start);
-                let count = u16::from_be_bytes(count);
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 Some(Self::ReadHolding { start, count })
             },
@@ -99,11 +90,8 @@ impl ReadGet for FunctionCode {
                     Err(_)      => return None
                 }
 
-                let start = [bfr[0], bfr[1]];
-                let count = [bfr[2], bfr[3]];
-
-                let start = u16::from_be_bytes(start);
-                let count = u16::from_be_bytes(count);
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 Some(Self::ReadInput { start, count })
             },
