@@ -1,3 +1,9 @@
+/// Helper tools and functions to be used within the crate
+/// 
+pub(crate) mod helpers;
+
+/// Holds commands and respoonses
+/// 
 pub mod function_codes;
 use function_codes::{Command, Response};
 
