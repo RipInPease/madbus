@@ -1,3 +1,6 @@
+use crate::ReadGet;
+use std::io::prelude::*;
+
 /// A command sent from the client(Master) to the server(Slave)
 pub enum Command {
     /// Function code 0x01
@@ -22,6 +25,84 @@ pub enum Command {
     ReadInput{
         start: u16,
         count: u16,
+    }
+}
+
+
+impl ReadGet for Command {
+    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+        let mut bfr = [0];
+
+        match reader.read(&mut bfr) {
+            Ok(count) => if count < 1 { return None },
+            Err(_)    => return None
+        }
+        let function_code = bfr[0];
+
+        match function_code {
+            // Read Coils
+            1 => {
+                let mut bfr = [0;4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::ReadCoils { start, count };
+                Some(cmd)
+            },
+
+            // Read DI
+            2 => {
+                let mut bfr = [0;4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::ReadDI { start, count };
+                Some(cmd)
+            },
+
+            // Read Holding
+            3 => {
+                let mut bfr = [0;4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::ReadHolding { start, count };
+                Some(cmd)
+            },
+
+            // Read Input
+            5 => {
+                let mut bfr = [0;4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::ReadInput { start, count };
+                Some(cmd)
+            },
+
+            _ => None
+        }
+
     }
 }
 
@@ -149,6 +230,13 @@ impl Response {
         status.clone_from_slice(addresses);
         
         Self::ReadInput { count, status }
+    }
+}
+
+
+impl Into<Vec<u8>> for Response {
+    fn into(self) -> Vec<u8> {
+        (&self).into()
     }
 }
 
