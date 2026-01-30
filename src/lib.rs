@@ -12,8 +12,8 @@ use std::net::{
 /// 
 /// Return NONE if any error occured, else returns Self
 /// 
-pub trait ReadGet {
-    fn read_get(&mut self) -> Option<Self> where Self: Sized;
+pub trait ReadGet<R: Read> {
+    fn read_get(reader: &mut R) -> Option<Self> where Self: Sized;
 }
 
 
