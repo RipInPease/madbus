@@ -1,3 +1,4 @@
+pub mod function_codes;
 
 use std::io::prelude::*;
 use std::net::{
@@ -45,4 +46,11 @@ impl Client {
 /// 
 pub struct Server {
 
+}
+
+
+/// A command sent from the client(Master) to the server(Slave)
+/// 
+pub struct Command {
+    header: MBAPHeader
 }
