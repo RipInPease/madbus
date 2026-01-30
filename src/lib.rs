@@ -51,6 +51,6 @@ pub struct Server {
 
 /// A command sent from the client(Master) to the server(Slave)
 /// 
-pub struct Command {
+pub struct Request {
     header: MBAPHeader
 }
