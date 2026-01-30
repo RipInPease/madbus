@@ -157,10 +157,133 @@ impl Into<Vec<u8>> for &Response {
     fn into(self) -> Vec<u8> {
         match self {
             Response::ReadCoils { count, status } => {
-                // Byte count + 3 bytes (the byte count itself + function code)
-                let mut v = Vec::with_capacity(count as usize + 3);
-                
+                //The byte count + the byte count itself + function code
+                let mut v = Vec::with_capacity(*count as usize + 2);
+
+                // Function code
+                v.push(1);
+
+                //Byte count
+                v.push(*count);
+
+                //Coils status
+                v.extend_from_slice(&bools_to_bytes(&status));
+
+                v
+            },
+
+            Response::ReadDI { count, status } => {
+                //The byte count + the byte count itself + function code
+                let mut v = Vec::with_capacity(*count as usize + 2);
+
+                // Function code
+                v.push(2);
+
+                //Byte count
+                v.push(*count);
+
+                //Coils status
+                v.extend_from_slice(&bools_to_bytes(&status));
+
+                v
+            },
+
+            Response::ReadHolding { count, status } => {
+                //The byte count + the byte count itself + function code
+                let mut v = Vec::with_capacity(*count as usize + 2);
+
+                // Function code
+                v.push(3);
+
+                //Byte count
+                v.push(*count);
+
+                //Coils status
+                for word in status {
+                    let bytes = word.to_be_bytes();
+                    v.extend_from_slice(&bytes);
+                }
+
+                v
+            },
+
+            Response::ReadInput { count, status } => {
+                //The byte count + the byte count itself + function code
+                let mut v = Vec::with_capacity(*count as usize + 2);
+
+                // Function code
+                v.push(3);
+
+                //Byte count
+                v.push(*count);
+
+                //Coils status
+                for word in status {
+                    let bytes = word.to_be_bytes();
+                    v.extend_from_slice(&bytes);
+                }
+
+                v
             }
         }
+    }
+}
+
+
+
+/// Turns a slice of bools into a vec of bytes
+/// 
+fn bools_to_bytes(bools: &[bool]) -> Vec<u8> {
+    let mut v = Vec::with_capacity(bools.len() / 8 + 1);
+
+    for bools in bools.windows(8).step_by(8) {
+        let mut byte = 0x0;
+        for bool in bools.iter().rev() {
+            byte <<= 1;
+            byte |= *bool as u8;
+        }
+
+        v.push(byte)
+    }
+
+    let remain = bools.len() % 8;
+    let mut byte = 0x0;
+    for bool in bools[bools.len() - remain..].iter().rev() {
+        byte <<= 1;
+        byte |= *bool as u8;
+    }
+    v.push(byte);
+
+    v
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::bools_to_bytes;
+
+    #[test]
+    fn test_bools_to_bytes1() {
+        let bools = vec![true;8];
+        let bytes = bools_to_bytes(&bools);
+        
+        assert_eq!(bytes[0], 255);
+    }
+
+    #[test]
+    fn test_bools_to_bytes2() {
+        let bools = vec![true;9];
+        let bytes = bools_to_bytes(&bools);
+        
+        assert_eq!(bytes[0], 255);
+        assert_eq!(bytes[1], 1);
+    }
+
+    #[test]
+    fn test_bools_to_bytes3() {
+        let bools = vec![true, false, true];
+        let bytes = bools_to_bytes(&bools);
+        
+        assert_eq!(bytes[0], 5);
     }
 }
