@@ -151,3 +151,16 @@ impl Response {
         Self::ReadInput { count, status }
     }
 }
+
+
+impl Into<Vec<u8>> for &Response {
+    fn into(self) -> Vec<u8> {
+        match self {
+            Response::ReadCoils { count, status } => {
+                // Byte count + 3 bytes (the byte count itself + function code)
+                let mut v = Vec::with_capacity(count as usize + 3);
+                
+            }
+        }
+    }
+}
