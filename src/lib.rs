@@ -8,7 +8,9 @@ pub mod function_codes;
 use function_codes::{Command, Response};
 
 use std::io::prelude::*;
+use std::io::Error as IOError;
 use std::net::{
+    TcpStream,
     TcpListener,
     Ipv4Addr,
     SocketAddrV4,
@@ -79,16 +81,29 @@ impl Into<Vec<u8>> for &MBAPHeader {
 /// 
 pub struct Client {
     ip: SocketAddrV4,
+    pub listener: TcpListener,
 }
 
 
 impl Client {
-    pub fn new<T: Into<Ipv4Addr>>(ip: T) -> Self {
+    /// Creates a new Client with a given IP
+    /// 
+    pub fn new<T: Into<Ipv4Addr>>(ip: T) -> Result<Self, IOError> {
         let ip = ip.into();
         let ip = SocketAddrV4::new(ip, 502);
-        Self{ ip }
+
+        let listener = TcpListener::bind(ip)?;
+        Ok(Self{ ip, listener })
+    }
+
+
+    /// Tries to read a request on a TcpStream
+    /// 
+    pub fn read_request(stream: &mut TcpStream) -> Option<Request> {
+        Request::read_get(stream)
     }
 }
+
 
 /// It is a slave unit, whoever thought of calling it Client/Server instead of Master/Slave should burn in hell
 /// 
@@ -102,4 +117,14 @@ pub struct Server {
 pub struct Request {
     header  : MBAPHeader,
     command : Command
+}
+
+
+impl ReadGet for Request {
+    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+        let header = MBAPHeader::read_get(reader)?;
+        let command = Command::read_get(reader)?;
+
+        Some(Self{ header, command })
+    }
 }
