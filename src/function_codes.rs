@@ -4,6 +4,8 @@ use std::io::prelude::*;
 use crate::helpers::*;
 
 /// A command sent from the client(Master) to the server(Slave)
+/// 
+#[derive(Clone, Debug)]
 pub enum PduCommand {
     /// Function code 0x01
     ReadCoils{
@@ -162,6 +164,7 @@ impl Into<Vec<u8>> for PduCommand {
 
 /// Response a server(Slave) sends in response to a command
 /// 
+#[derive(Clone, Debug)]
 pub enum PduResponse {
     /// Function code 0x01
     ReadCoils{

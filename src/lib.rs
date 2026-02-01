@@ -25,6 +25,7 @@ pub trait ReadGet {
 
 /// The header of any transmission
 /// 
+#[derive(Clone, Debug)]
 pub(crate) struct MBAPHeader {
     pub transaction_id: u16,
     pub protocol_id   : u16,
@@ -76,12 +77,22 @@ impl Into<Vec<u8>> for &MBAPHeader {
 
 /// It is a master unit, whoever thought of calling it Client/Server instead of Master/Slave should burn in hell
 /// 
+#[derive(Clone, Debug)]
 pub struct Client;
 
 impl Client {
     /// Send a Request through a TcpStream to the Server(Slave)
     /// 
-    pub fn send_request(stream: &mut TcpStream, request: AduRequest) -> Result<(), IOError> {
+    pub fn send_request(stream: &mut TcpStream, command: PduCommand, unit_id: u8) -> Result<(), IOError> {
+        let header = 
+            MBAPHeader{ 
+                transaction_id:1, 
+                protocol_id: 0,  
+                length: {let data: Vec<u8> = (&command).into(); data.len() as u16 + 1},
+                unit_id
+            };
+
+        let request = AduRequest{ header, command };
         let data: Vec<u8> = request.into();
 
         stream.write(&data)?;
@@ -102,6 +113,7 @@ impl Client {
 
 /// It is a slave unit, whoever thought of calling it Client/Server instead of Master/Slave should burn in hell
 /// 
+#[derive(Clone, Debug)]
 pub struct Server;
 
 impl Server {
@@ -128,6 +140,7 @@ impl Server {
 
 /// A command sent from the client(Master) to the server(Slave)
 /// 
+#[derive(Clone, Debug)]
 pub struct AduRequest {
     header  : MBAPHeader,
     command : PduCommand
@@ -165,6 +178,7 @@ impl Into<Vec<u8>> for AduRequest {
 
 /// A response sent from the Server(Slace) to the Client(Master)
 /// 
+#[derive(Clone, Debug)]
 pub struct AduResposne {
     header: MBAPHeader,
     response: PduResponse,
