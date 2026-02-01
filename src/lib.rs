@@ -11,9 +11,6 @@ use std::io::prelude::*;
 use std::io::Error as IOError;
 use std::net::{
     TcpStream,
-    TcpListener,
-    Ipv4Addr,
-    SocketAddrV4,
 };
 
 
@@ -79,36 +76,25 @@ impl Into<Vec<u8>> for &MBAPHeader {
 
 /// It is a master unit, whoever thought of calling it Client/Server instead of Master/Slave should burn in hell
 /// 
-pub struct Client {
-    ip: SocketAddrV4,
-    pub listener: TcpListener,
-}
-
+pub struct Client;
 
 impl Client {
-    /// Creates a new Client with a given IP
-    /// 
-    pub fn new<T: Into<Ipv4Addr>>(ip: T) -> Result<Self, IOError> {
-        let ip = ip.into();
-        let ip = SocketAddrV4::new(ip, 502);
 
-        let listener = TcpListener::bind(ip)?;
-        Ok(Self{ ip, listener })
-    }
-
-
-    /// Tries to read a request on a TcpStream
-    /// 
-    pub fn read_request(stream: &mut TcpStream) -> Option<Request> {
-        Request::read_get(stream)
-    }
 }
 
 
 /// It is a slave unit, whoever thought of calling it Client/Server instead of Master/Slave should burn in hell
 /// 
-pub struct Server {
+pub struct Server;
 
+impl Server {
+    /// Reads a Request from the a client(Master) through a TcpStream. 
+    /// 
+    /// Returns None if failed
+    /// 
+    pub fn read_request(stream: &mut TcpStream) -> Option<Request> {
+        Request::read_get(stream)
+    }
 }
 
 
@@ -126,5 +112,17 @@ impl ReadGet for Request {
         let command = Command::read_get(reader)?;
 
         Some(Self{ header, command })
+    }
+}
+
+
+impl Into<Vec<u8>> for &Request {
+    fn into(self) -> Vec<u8> {
+        let mut v: Vec<u8> = (&self.header).into();
+
+        let command: Vec<u8> = (&self.command).into();
+        v.extend_from_slice(&command);
+
+        v
     }
 }
