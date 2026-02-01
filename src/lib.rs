@@ -88,7 +88,7 @@ impl Client {
             MBAPHeader{ 
                 transaction_id:1, 
                 protocol_id: 0,  
-                length: {let data: Vec<u8> = (&command).into(); data.len() as u16 + 1},
+                length: {command.size() + 1},
                 unit_id
             };
 

@@ -122,6 +122,18 @@ impl PduCommand {
             Self::ReadInput{..}   => 4,
         }
     }
+
+
+    /// Gives the size of the command in bytes
+    /// 
+    pub fn size(&self) -> u16 {
+        match self {
+            PduCommand::ReadCoils{..} => 4,
+            PduCommand::ReadDI{..} => 4,
+            PduCommand::ReadHolding{..} => 4,
+            PduCommand::ReadInput{..} => 4,
+        }
+    }
 }
 
 
@@ -235,6 +247,18 @@ impl PduResponse {
         status.clone_from_slice(addresses);
         
         Self::ReadInput { byte_count, status }
+    }
+
+
+    /// Gives the size of the response in bytes
+    /// 
+    pub fn size(&self) -> u16 {
+        match self {
+            PduResponse::ReadCoils{ byte_count, .. } => 2 + *byte_count as u16,
+            PduResponse::ReadDI{ byte_count, .. } => 2 + *byte_count as u16,
+            PduResponse::ReadHolding{ byte_count, .. } => 2 + *byte_count as u16,
+            PduResponse::ReadInput{ byte_count, .. } => 2 + *byte_count as u16,
+        }
     }
 }
 
