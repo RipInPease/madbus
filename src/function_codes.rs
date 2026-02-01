@@ -4,7 +4,7 @@ use std::io::prelude::*;
 use crate::helpers::*;
 
 /// A command sent from the client(Master) to the server(Slave)
-pub enum Command {
+pub enum PduCommand {
     /// Function code 0x01
     ReadCoils{
         start: u16,
@@ -31,7 +31,7 @@ pub enum Command {
 }
 
 
-impl ReadGet for Command {
+impl ReadGet for PduCommand {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
         let mut bfr = [0];
 
@@ -109,7 +109,7 @@ impl ReadGet for Command {
 }
 
 
-impl Command {
+impl PduCommand {
     /// Gets the function code of the associated command
     /// 
     pub fn function_code(&self) -> u8 {
@@ -123,25 +123,25 @@ impl Command {
 }
 
 
-impl Into<Vec<u8>> for &Command {
+impl Into<Vec<u8>> for &PduCommand {
     fn into(self) -> Vec<u8> {
         let mut v = Vec::with_capacity(10);
         v.push(self.function_code());
 
         match self {
-            Command::ReadCoils{start, count}   => {
+            PduCommand::ReadCoils{start, count}   => {
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
             },
-            Command::ReadDI{start, count}   => {
+            PduCommand::ReadDI{start, count}   => {
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
             },
-            Command::ReadHolding{start, count}   => {
+            PduCommand::ReadHolding{start, count}   => {
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
             },
-            Command::ReadInput{start, count}   => {
+            PduCommand::ReadInput{start, count}   => {
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
             },
@@ -152,7 +152,7 @@ impl Into<Vec<u8>> for &Command {
 }
 
 
-impl Into<Vec<u8>> for Command {
+impl Into<Vec<u8>> for PduCommand {
     fn into(self) -> Vec<u8> {
         (&self).into()
     }
@@ -162,7 +162,7 @@ impl Into<Vec<u8>> for Command {
 
 /// Response a server(Slave) sends in response to a command
 /// 
-pub enum Response {
+pub enum PduResponse {
     /// Function code 0x01
     ReadCoils{
         byte_count: u8,
@@ -189,7 +189,7 @@ pub enum Response {
 }
 
 
-impl Response {
+impl PduResponse {
     pub fn read_coils(coils: &[bool]) -> Self {
         let byte_count = if coils.len() % 8 > 0 {
             coils.len() as u8 / 8 + 1
@@ -236,17 +236,17 @@ impl Response {
 }
 
 
-impl Into<Vec<u8>> for Response {
+impl Into<Vec<u8>> for PduResponse {
     fn into(self) -> Vec<u8> {
         (&self).into()
     }
 }
 
 
-impl Into<Vec<u8>> for &Response {
+impl Into<Vec<u8>> for &PduResponse {
     fn into(self) -> Vec<u8> {
         match self {
-            Response::ReadCoils { byte_count, status } => {
+            PduResponse::ReadCoils { byte_count, status } => {
                 //The byte count + the byte count itself + function code
                 let mut v = Vec::with_capacity(*byte_count as usize + 2);
 
@@ -262,7 +262,7 @@ impl Into<Vec<u8>> for &Response {
                 v
             },
 
-            Response::ReadDI { byte_count, status } => {
+            PduResponse::ReadDI { byte_count, status } => {
                 //The byte count + the byte count itself + function code
                 let mut v = Vec::with_capacity(*byte_count as usize + 2);
 
@@ -278,7 +278,7 @@ impl Into<Vec<u8>> for &Response {
                 v
             },
 
-            Response::ReadHolding { byte_count, status } => {
+            PduResponse::ReadHolding { byte_count, status } => {
                 //The byte count + the byte count itself + function code
                 let mut v = Vec::with_capacity(*byte_count as usize + 2);
 
@@ -297,7 +297,7 @@ impl Into<Vec<u8>> for &Response {
                 v
             },
 
-            Response::ReadInput { byte_count, status } => {
+            PduResponse::ReadInput { byte_count, status } => {
                 //The byte count + the byte count itself + function code
                 let mut v = Vec::with_capacity(*byte_count as usize + 2);
 
@@ -320,7 +320,7 @@ impl Into<Vec<u8>> for &Response {
 }
 
 
-impl ReadGet for Response {
+impl ReadGet for PduResponse {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
         let mut bfr = [0];
 

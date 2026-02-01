@@ -5,7 +5,7 @@ pub(crate) mod helpers;
 /// Holds commands and respoonses
 /// 
 pub mod function_codes;
-use function_codes::{Command, Response};
+use function_codes::{PduCommand, PduResponse};
 
 use std::io::prelude::*;
 use std::io::Error as IOError;
@@ -79,7 +79,24 @@ impl Into<Vec<u8>> for &MBAPHeader {
 pub struct Client;
 
 impl Client {
+    /// Send a Request through a TcpStream to the Server(Slave)
+    /// 
+    pub fn send_request(stream: &mut TcpStream, request: AduRequest) -> Result<(), IOError> {
+        let data: Vec<u8> = request.into();
 
+        stream.write(&data)?;
+
+        Ok(())
+    }
+
+
+    /// Reads a response over the TcpStream.
+    /// 
+    /// Returns None if failed
+    /// 
+    pub fn read_response(stream: &mut TcpStream) -> Option<AduResposne> {
+        AduResposne::read_get(stream)
+    }
 }
 
 
@@ -92,31 +109,42 @@ impl Server {
     /// 
     /// Returns None if failed
     /// 
-    pub fn read_request(stream: &mut TcpStream) -> Option<Request> {
-        Request::read_get(stream)
+    pub fn read_request(stream: &mut TcpStream) -> Option<AduRequest> {
+        AduRequest::read_get(stream)
+    }
+
+
+    /// Send a response over a TcpStream to the Client(Master)
+    /// 
+    pub fn send_resp(stream: &mut TcpStream, response: AduResposne) -> Result<(), IOError> { 
+        let data: Vec<u8> = response.into();
+
+        stream.write(&data)?;
+
+        Ok(())
     }
 }
 
 
 /// A command sent from the client(Master) to the server(Slave)
 /// 
-pub struct Request {
+pub struct AduRequest {
     header  : MBAPHeader,
-    command : Command
+    command : PduCommand
 }
 
 
-impl ReadGet for Request {
+impl ReadGet for AduRequest {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
         let header = MBAPHeader::read_get(reader)?;
-        let command = Command::read_get(reader)?;
+        let command = PduCommand::read_get(reader)?;
 
         Some(Self{ header, command })
     }
 }
 
 
-impl Into<Vec<u8>> for &Request {
+impl Into<Vec<u8>> for &AduRequest {
     fn into(self) -> Vec<u8> {
         let mut v: Vec<u8> = (&self.header).into();
 
@@ -124,5 +152,49 @@ impl Into<Vec<u8>> for &Request {
         v.extend_from_slice(&command);
 
         v
+    }
+}
+
+
+impl Into<Vec<u8>> for AduRequest {
+    fn into(self) -> Vec<u8> {
+        (&self).into()
+    }
+}
+
+
+/// A response sent from the Server(Slace) to the Client(Master)
+/// 
+pub struct AduResposne {
+    header: MBAPHeader,
+    response: PduResponse,
+}
+
+
+impl ReadGet for AduResposne {
+    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+        let header = MBAPHeader::read_get(reader)?;
+        let response = PduResponse::read_get(reader)?;
+
+        Some(Self{ header, response })
+    }
+}
+
+
+impl Into<Vec<u8>> for &AduResposne {
+    fn into(self) -> Vec<u8> {
+        let mut v: Vec<u8> = (&self.header).into();
+
+        let response: Vec<u8> = (&self.response).into();
+        v.extend_from_slice(&response);
+
+        v
+    }
+}
+
+
+impl Into<Vec<u8>> for AduResposne {
+    fn into(self) -> Vec<u8> {
+        (&self).into()
     }
 }
