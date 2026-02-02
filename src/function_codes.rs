@@ -90,7 +90,7 @@ impl ReadGet for PduCommand {
             },
 
             // Read Input
-            5 => {
+            4 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
                     Ok(count) => if count < 4 { return None },
