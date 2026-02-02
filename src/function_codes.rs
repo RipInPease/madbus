@@ -49,6 +49,13 @@ pub enum PduCommand {
         count: u16,
         vals: Vec<bool>,
     },
+
+    /// Function code 0x10
+    WriteMultHolding {
+        start: u16,
+        count: u16,
+        vals: Vec<u16>
+    }
 }
 
 
@@ -165,7 +172,7 @@ impl ReadGet for PduCommand {
             15 => {
                 let mut bfr = [0;5];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 7 { return None },
+                    Ok(count) => if count < 5 { return None },
                     Err(_)    => return None
                 }
 
@@ -184,6 +191,35 @@ impl ReadGet for PduCommand {
                 let cmd = Self::WriteMultCoil{start, count, vals};
 
                 Some(cmd)
+            },
+
+            // Write multiple holding
+            16 => {
+                let mut bfr = [0;5];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 5 { return None },
+                    Err(_)    => return None
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+                let byte_count = bfr[4] as usize;
+
+                let mut bfr = vec![0;byte_count];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < byte_count { return None },
+                    Err(_)    => return None
+                }
+
+                let mut vals = Vec::with_capacity(byte_count as usize / 2);
+                for bytes in bfr.windows(2).step_by(2) {
+                    let val = u16::from_be_bytes([bytes[0], bytes[1]]);
+                    vals.push(val)
+                }
+
+                let cmd = Self::WriteMultHolding { start, count, vals };
+
+                Some(cmd)
             }
 
             _ => None
@@ -198,13 +234,14 @@ impl PduCommand {
     /// 
     pub fn function_code(&self) -> u8 {
         match self {
-            Self::ReadCoils{..}    => 1,
-            Self::ReadDI{..}       => 2,
-            Self::ReadHolding{..}  => 3,
-            Self::ReadInput{..}    => 4,
-            Self::WriteCoil{..}    => 5,
-            Self::WriteHolding{..} => 6,
-            Self::WriteMultCoil{..} => 15,
+            Self::ReadCoils{..}        => 1,
+            Self::ReadDI{..}           => 2,
+            Self::ReadHolding{..}      => 3,
+            Self::ReadInput{..}        => 4,
+            Self::WriteCoil{..}        => 5,
+            Self::WriteHolding{..}     => 6,
+            Self::WriteMultCoil{..}    => 15,
+            Self::WriteMultHolding{..} => 16,
         }
     }
 
@@ -230,6 +267,12 @@ impl PduCommand {
                 }
 
                 count as u16
+            },
+            Self::WriteMultHolding {vals, ..} => {
+                // Function code + start + count + byte count
+                let mut count = 6;
+                count += vals.len() as u16 * 2;
+                count
             }
         }
     }
@@ -238,7 +281,8 @@ impl PduCommand {
 
 impl Into<Vec<u8>> for &PduCommand {
     fn into(self) -> Vec<u8> {
-        let mut v = Vec::with_capacity(10);
+        let size = self.size() as usize;
+        let mut v = Vec::with_capacity(size);
         v.push(self.function_code());
 
         match self {
@@ -276,6 +320,7 @@ impl Into<Vec<u8>> for &PduCommand {
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
 
+                // Byte count
                 if vals.len() % 8 == 0 {
                     v.push(vals.len() as u8 / 8)
                 } else {
@@ -284,6 +329,13 @@ impl Into<Vec<u8>> for &PduCommand {
 
                 let vals_bytes = bools_to_bytes(&vals);
                 v.extend_from_slice(&vals_bytes);
+            },
+            PduCommand::WriteMultHolding {start, count, vals} => {
+                v.extend_from_slice(&start.to_be_bytes());
+                v.extend_from_slice(&count.to_be_bytes());
+
+                let byte_count = vals.len() as u8 * 2;
+                v.push(byte_count);
             }
         } 
 

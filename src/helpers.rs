@@ -28,7 +28,7 @@ pub fn bools_to_bytes(bools: &[bool]) -> Vec<u8> {
 /// Turns a slice of bytes to a vec of bools
 /// 
 pub fn bytes_to_bools(bytes: &[u8]) -> Vec<bool> {
-    let mut v = Vec::with_capacity(bytes.len() / 8 + 1);
+    let mut v = Vec::with_capacity(bytes.len() * 8);
 
     for byte in bytes {
         for i in 0..8 {
