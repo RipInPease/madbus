@@ -4,8 +4,8 @@ pub(crate) mod helpers;
 
 /// Holds commands and respoonses
 /// 
-pub mod function_codes;
-use function_codes::{PduCommand, PduResponse};
+mod function_codes;
+pub use function_codes::{PduCommand, PduResponse};
 
 use std::io::prelude::*;
 use std::io::Error as IOError;
@@ -126,11 +126,24 @@ impl Server {
     }
 
 
-    /// Send a response over a TcpStream to the Client(Master)
+    /// Send a response over a TcpStream to the Client(Master).
     /// 
-    pub fn send_resp(stream: &mut TcpStream, response: AduResposne) -> Result<(), IOError> { 
-        let data: Vec<u8> = response.into();
+    /// response: The PduResponse
+    /// 
+    /// Uid: The unit_id the response was sent from
+    /// 
+    /// Tid: The transaction ID of the response
+    /// 
+    pub fn send_resp(stream: &mut TcpStream, response: PduResponse, uid: u8, tid: u16) -> Result<(), IOError> { 
+        let header = MBAPHeader {
+            transaction_id: tid,
+            protocol_id: 0,
+            length: response.size() + 1,
+            unit_id: uid,
+        };
 
+        let response = AduResposne{header, response};
+        let data: Vec<u8> = response.into();
         stream.write(&data)?;
 
         Ok(())
@@ -143,7 +156,23 @@ impl Server {
 #[derive(Clone, Debug)]
 pub struct AduRequest {
     header  : MBAPHeader,
-    command : PduCommand
+    pub command : PduCommand
+}
+
+
+impl AduRequest {
+    /// Gives the unit_ID this request was sent to
+    /// 
+    pub fn uid(&self) -> u8 {
+        self.header.unit_id
+    }
+
+
+    /// Gives the transaction ID of this command
+    /// 
+    pub fn tid(&self) -> u16 {
+        self.header.transaction_id
+    }
 }
 
 
