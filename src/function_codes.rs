@@ -29,6 +29,12 @@ pub enum PduCommand {
     ReadInput{
         start: u16,
         count: u16,
+    },
+
+    /// Function code 0x5
+    WriteCoil {
+        coil: u16,
+        state: bool
     }
 }
 
@@ -104,6 +110,29 @@ impl ReadGet for PduCommand {
                 Some(cmd)
             },
 
+            // Write single coil
+            5 => {
+                let mut bfr = [0;4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None
+                }
+
+                let coil = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let state = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let state = if state == 0xff00 {
+                    true
+                } else if state == 0x0000 {
+                    false
+                } else {
+                    return None
+                };
+
+                let cmd = Self::WriteCoil { coil, state };
+                Some(cmd)
+            },
+
             _ => None
         }
 
@@ -120,6 +149,7 @@ impl PduCommand {
             Self::ReadDI{..}      => 2,
             Self::ReadHolding{..} => 3,
             Self::ReadInput{..}   => 4,
+            Self::WriteCoil{..}   => 5,
         }
     }
 
@@ -128,10 +158,11 @@ impl PduCommand {
     /// 
     pub fn size(&self) -> u16 {
         match self {
-            PduCommand::ReadCoils{..} => 4,
-            PduCommand::ReadDI{..} => 4,
-            PduCommand::ReadHolding{..} => 4,
-            PduCommand::ReadInput{..} => 4,
+            Self::ReadCoils{..} => 5,
+            Self::ReadDI{..} => 5,
+            Self::ReadHolding{..} => 5,
+            Self::ReadInput{..} => 5,
+            Self::WriteCoil {..} => 5,
         }
     }
 }
@@ -159,6 +190,16 @@ impl Into<Vec<u8>> for &PduCommand {
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
             },
+            PduCommand::WriteCoil {coil, state} => {
+                v.extend_from_slice(&coil.to_be_bytes());
+                if *state {
+                    v.push(0xFF);
+                    v.push(0x00);
+                } else {
+                    v.push(0x00);
+                    v.push(0x00);
+                }
+            }
         } 
 
         v
