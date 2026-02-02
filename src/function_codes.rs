@@ -358,25 +358,21 @@ impl Into<Vec<u8>> for PduCommand {
 pub enum PduResponse {
     /// Function code 0x01
     ReadCoils{
-        byte_count: u8,
         status: Vec<bool>
     },
 
     /// Function code 0x02
     ReadDI{
-        byte_count: u8,
         status: Vec<bool>
     },
 
     /// Function code 0x03
     ReadHolding{
-        byte_count: u8,
         status: Vec<u16>
     },
 
     /// Function code 0x04
     ReadInput{
-        byte_count: u8,
         status: Vec<u16>
     },
 }
@@ -384,47 +380,31 @@ pub enum PduResponse {
 
 impl PduResponse {
     pub fn read_coils(coils: &[bool]) -> Self {
-        let byte_count = if coils.len() % 8 > 0 {
-            coils.len() as u8 / 8 + 1
-        } else {
-            coils.len() as u8 / 8
-        };
-
         let mut status = Vec::with_capacity(coils.len());
         status.clone_from_slice(coils);
 
-        Self::ReadCoils { byte_count, status }
+        Self::ReadCoils { status }
     }
 
     pub fn read_di(di: &[bool]) -> Self {
-        let byte_count = if di.len() % 8 > 0 {
-            di.len() as u8 / 8 + 1
-        } else {
-            di.len() as u8 / 8
-        };
-
         let mut status = Vec::with_capacity(di.len());
         status.clone_from_slice(di);
         
-        Self::ReadDI { byte_count, status }
+        Self::ReadDI { status }
     }
 
     pub fn read_holding(addresses: &[u16]) -> Self {
-        let byte_count = addresses.len() as u8 * 2;
-
         let mut status = Vec::with_capacity(addresses.len());
         status.clone_from_slice(addresses);
         
-        Self::ReadHolding { byte_count, status }
+        Self::ReadHolding { status }
     }
 
     pub fn read_input(addresses: &[u16]) -> Self {
-        let byte_count = addresses.len() as u8 * 2;
-
         let mut status = Vec::with_capacity(addresses.len());
         status.clone_from_slice(addresses);
         
-        Self::ReadInput { byte_count, status }
+        Self::ReadInput { status }
     }
 
 
@@ -432,10 +412,44 @@ impl PduResponse {
     /// 
     pub fn size(&self) -> u16 {
         match self {
-            PduResponse::ReadCoils{ byte_count, .. } => 2 + *byte_count as u16,
-            PduResponse::ReadDI{ byte_count, .. } => 2 + *byte_count as u16,
-            PduResponse::ReadHolding{ byte_count, .. } => 2 + *byte_count as u16,
-            PduResponse::ReadInput{ byte_count, .. } => 2 + *byte_count as u16,
+            PduResponse::ReadCoils{status} => {
+                // Function code + byte count
+                let mut size = 2;
+
+                if status.len() % 8 == 0 {
+                    size += status.len() as u16 / 8
+                } else {
+                    size += status.len() as u16 / 8 + 1
+                }
+
+                size
+            },
+            PduResponse::ReadDI{status} => {
+                // Function code + byte count
+                let mut size = 2;
+
+                if status.len() % 8 == 0 {
+                    size += status.len() as u16 / 8
+                } else {
+                    size += status.len() as u16 / 8 + 1
+                }
+
+                size
+            },
+            PduResponse::ReadHolding{ status } => {
+                // Function code + byte count
+                let mut size = 2;
+
+                size += status.len() as u16 * 2;
+                size
+            },
+            PduResponse::ReadInput{ status } => {
+                // Function code + byte count
+                let mut size = 2;
+
+                size += status.len() as u16 * 2;
+                size
+            },
         }
     }
 }
@@ -451,15 +465,21 @@ impl Into<Vec<u8>> for PduResponse {
 impl Into<Vec<u8>> for &PduResponse {
     fn into(self) -> Vec<u8> {
         match self {
-            PduResponse::ReadCoils { byte_count, status } => {
+            PduResponse::ReadCoils { status } => {
+                let byte_count = if status.len() % 8 == 0 {
+                    status.len() as u8 / 8
+                } else {
+                    status.len() as u8 / 8 + 1
+                };
+
                 //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(*byte_count as usize + 2);
+                let mut v = Vec::with_capacity(byte_count as usize + 2);
 
                 // Function code
                 v.push(1);
 
                 //Byte count
-                v.push(*byte_count);
+                v.push(byte_count);
 
                 //Coils status
                 v.extend_from_slice(&bools_to_bytes(&status));
@@ -467,15 +487,21 @@ impl Into<Vec<u8>> for &PduResponse {
                 v
             },
 
-            PduResponse::ReadDI { byte_count, status } => {
+            PduResponse::ReadDI { status } => {
+                let byte_count = if status.len() % 8 == 0 {
+                    status.len() as u8 / 8
+                } else {
+                    status.len() as u8 / 8 + 1
+                };
+
                 //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(*byte_count as usize + 2);
+                let mut v = Vec::with_capacity(byte_count as usize + 2);
 
                 // Function code
                 v.push(2);
 
                 //Byte count
-                v.push(*byte_count);
+                v.push(byte_count);
 
                 //Coils status
                 v.extend_from_slice(&bools_to_bytes(&status));
@@ -483,15 +509,17 @@ impl Into<Vec<u8>> for &PduResponse {
                 v
             },
 
-            PduResponse::ReadHolding { byte_count, status } => {
+            PduResponse::ReadHolding { status } => {
+                let byte_count = status.len() as u8 * 2;
+
                 //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(*byte_count as usize + 2);
+                let mut v = Vec::with_capacity(byte_count as usize + 2);
 
                 // Function code
                 v.push(3);
 
                 //Byte count
-                v.push(*byte_count);
+                v.push(byte_count);
 
                 //Coils status
                 for word in status {
@@ -502,15 +530,17 @@ impl Into<Vec<u8>> for &PduResponse {
                 v
             },
 
-            PduResponse::ReadInput { byte_count, status } => {
+            PduResponse::ReadInput { status } => {
+                let byte_count = status.len() as u8 * 2;
+
                 //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(*byte_count as usize + 2);
+                let mut v = Vec::with_capacity(byte_count as usize + 2);
 
                 // Function code
                 v.push(3);
 
                 //Byte count
-                v.push(*byte_count);
+                v.push(byte_count);
 
                 //Coils status
                 for word in status {
@@ -554,7 +584,7 @@ impl ReadGet for PduResponse {
 
                 let status = bytes_to_bools(&bfr);
                 
-                let response = Self::ReadCoils { byte_count, status };
+                let response = Self::ReadCoils { status };
                 Some(response)
             },
 
@@ -576,7 +606,7 @@ impl ReadGet for PduResponse {
 
                 let status = bytes_to_bools(&bfr);
                 
-                let response = Self::ReadDI { byte_count, status };
+                let response = Self::ReadDI { status };
                 Some(response)
             },
 
@@ -602,7 +632,7 @@ impl ReadGet for PduResponse {
                     status.push(word);
                 }
                 
-                let response = Self::ReadHolding { byte_count, status };
+                let response = Self::ReadHolding { status };
                 Some(response)
             },
 
@@ -628,7 +658,7 @@ impl ReadGet for PduResponse {
                     status.push(word);
                 }
                 
-                let response = Self::ReadInput { byte_count, status };
+                let response = Self::ReadInput { status };
                 Some(response)
             },
 
