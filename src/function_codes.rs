@@ -31,11 +31,17 @@ pub enum PduCommand {
         count: u16,
     },
 
-    /// Function code 0x5
+    /// Function code 0x05
     WriteCoil {
         coil: u16,
         state: bool
-    }
+    },
+
+    /// Function code 0x06
+    WriteHolding {
+        address: u16,
+        value: u16
+    },
 }
 
 
@@ -133,6 +139,21 @@ impl ReadGet for PduCommand {
                 Some(cmd)
             },
 
+            // Write single holding
+            6 => {
+                let mut bfr = [0;4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None
+                }
+
+                let address = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let value = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::WriteHolding {address, value};
+                Some(cmd)
+            },
+
             _ => None
         }
 
@@ -145,11 +166,12 @@ impl PduCommand {
     /// 
     pub fn function_code(&self) -> u8 {
         match self {
-            Self::ReadCoils{..}   => 1,
-            Self::ReadDI{..}      => 2,
-            Self::ReadHolding{..} => 3,
-            Self::ReadInput{..}   => 4,
-            Self::WriteCoil{..}   => 5,
+            Self::ReadCoils{..}    => 1,
+            Self::ReadDI{..}       => 2,
+            Self::ReadHolding{..}  => 3,
+            Self::ReadInput{..}    => 4,
+            Self::WriteCoil{..}    => 5,
+            Self::WriteHolding{..} => 6,
         }
     }
 
@@ -162,7 +184,8 @@ impl PduCommand {
             Self::ReadDI{..} => 5,
             Self::ReadHolding{..} => 5,
             Self::ReadInput{..} => 5,
-            Self::WriteCoil {..} => 5,
+            Self::WriteCoil{..} => 5,
+            Self::WriteHolding{..} => 5,
         }
     }
 }
@@ -199,6 +222,10 @@ impl Into<Vec<u8>> for &PduCommand {
                     v.push(0x00);
                     v.push(0x00);
                 }
+            }
+            PduCommand::WriteHolding {address, value} => {
+                v.extend_from_slice(&address.to_be_bytes());
+                v.extend_from_slice(&value.to_be_bytes());
             }
         } 
 
