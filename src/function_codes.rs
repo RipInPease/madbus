@@ -42,6 +42,13 @@ pub enum PduCommand {
         address: u16,
         value: u16
     },
+
+    /// Function code 0x0F
+    WriteMultCoil {
+        start: u16,
+        count: u16,
+        vals: Vec<bool>,
+    },
 }
 
 
@@ -154,6 +161,31 @@ impl ReadGet for PduCommand {
                 Some(cmd)
             },
 
+            // Write multiple coils
+            15 => {
+                let mut bfr = [0;5];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 7 { return None },
+                    Err(_)    => return None
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+                let byte_count = bfr[4] as usize;
+
+                let mut bfr = vec![0;byte_count];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < byte_count { return None },
+                    Err(_)    => return None
+                }
+
+                let vals = bytes_to_bools(&bfr);
+
+                let cmd = Self::WriteMultCoil{start, count, vals};
+
+                Some(cmd)
+            }
+
             _ => None
         }
 
@@ -172,6 +204,7 @@ impl PduCommand {
             Self::ReadInput{..}    => 4,
             Self::WriteCoil{..}    => 5,
             Self::WriteHolding{..} => 6,
+            Self::WriteMultCoil{..} => 15,
         }
     }
 
@@ -186,6 +219,18 @@ impl PduCommand {
             Self::ReadInput{..} => 5,
             Self::WriteCoil{..} => 5,
             Self::WriteHolding{..} => 5,
+            Self::WriteMultCoil {vals, ..} => {
+                // Function code + start + count + byte count
+                let mut count = 6;
+
+                if vals.len() % 8 == 0 {
+                    count += vals.len() / 8;
+                } else {
+                    count +=  vals.len() / 8 + 1;
+                }
+
+                count as u16
+            }
         }
     }
 }
@@ -226,6 +271,19 @@ impl Into<Vec<u8>> for &PduCommand {
             PduCommand::WriteHolding {address, value} => {
                 v.extend_from_slice(&address.to_be_bytes());
                 v.extend_from_slice(&value.to_be_bytes());
+            },
+            PduCommand::WriteMultCoil {start, count, vals} => {
+                v.extend_from_slice(&start.to_be_bytes());
+                v.extend_from_slice(&count.to_be_bytes());
+
+                if vals.len() % 8 == 0 {
+                    v.push(vals.len() as u8 / 8)
+                } else {
+                    v.push(vals.len() as u8 / 8 + 1);
+                }
+
+                let vals_bytes = bools_to_bytes(&vals);
+                v.extend_from_slice(&vals_bytes);
             }
         } 
 
