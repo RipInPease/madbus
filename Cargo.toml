@@ -2,5 +2,9 @@
 name = "madbus"
 version = "0.1.0"
 edition = "2024"
+description = "A modbus TCP driver written entirely in Rust"
+homepage = "https://github.com/RipInPease/madbus"
+repository = "https://github.com/RipInPease/madbus"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
