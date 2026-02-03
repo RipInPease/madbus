@@ -103,10 +103,14 @@ impl Client {
 
     /// Reads a response over the TcpStream.
     /// 
+    /// Values returned are: (Response, unit_id, transaction_id) 
+    /// 
     /// Returns None if failed
     /// 
-    pub fn read_response(stream: &mut TcpStream) -> Option<AduResposne> {
-        AduResposne::read_get(stream)
+    pub fn read_response(stream: &mut TcpStream) -> Option<(PduResponse, u8, u16)> {
+        let reqeust = AduResponse::read_get(stream)?;
+
+        Some((reqeust.response, reqeust.header.unit_id, reqeust.header.transaction_id))
     }
 }
 
@@ -119,10 +123,14 @@ pub struct Server;
 impl Server {
     /// Reads a Request from the a client(Master) through a TcpStream. 
     /// 
+    /// Values returned are: (Request, unit_id, transaction_id)
+    /// 
     /// Returns None if failed
     /// 
-    pub fn read_request(stream: &mut TcpStream) -> Option<AduRequest> {
-        AduRequest::read_get(stream)
+    pub fn read_request(stream: &mut TcpStream) -> Option<(PduCommand, u8, u16)> {
+        let reqeust = AduRequest::read_get(stream)?;
+
+        Some((reqeust.command, reqeust.header.unit_id, reqeust.header.transaction_id))
     }
 
 
@@ -142,7 +150,7 @@ impl Server {
             unit_id: uid,
         };
 
-        let response = AduResposne{header, response};
+        let response = AduResponse{header, response};
         let data: Vec<u8> = response.into();
         stream.write(&data)?;
 
@@ -154,25 +162,9 @@ impl Server {
 /// A command sent from the client(Master) to the server(Slave)
 /// 
 #[derive(Clone, Debug)]
-pub struct AduRequest {
+struct AduRequest {
     header  : MBAPHeader,
-    pub command : PduCommand
-}
-
-
-impl AduRequest {
-    /// Gives the unit_ID this request was sent to
-    /// 
-    pub fn uid(&self) -> u8 {
-        self.header.unit_id
-    }
-
-
-    /// Gives the transaction ID of this command
-    /// 
-    pub fn tid(&self) -> u16 {
-        self.header.transaction_id
-    }
+    command : PduCommand
 }
 
 
@@ -208,13 +200,13 @@ impl Into<Vec<u8>> for AduRequest {
 /// A response sent from the Server(Slace) to the Client(Master)
 /// 
 #[derive(Clone, Debug)]
-pub struct AduResposne {
+struct AduResponse {
     header: MBAPHeader,
     response: PduResponse,
 }
 
 
-impl ReadGet for AduResposne {
+impl ReadGet for AduResponse {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
         let header = MBAPHeader::read_get(reader)?;
         let response = PduResponse::read_get(reader)?;
@@ -224,7 +216,7 @@ impl ReadGet for AduResposne {
 }
 
 
-impl Into<Vec<u8>> for &AduResposne {
+impl Into<Vec<u8>> for &AduResponse {
     fn into(self) -> Vec<u8> {
         let mut v: Vec<u8> = (&self.header).into();
 
@@ -236,7 +228,7 @@ impl Into<Vec<u8>> for &AduResposne {
 }
 
 
-impl Into<Vec<u8>> for AduResposne {
+impl Into<Vec<u8>> for AduResponse {
     fn into(self) -> Vec<u8> {
         (&self).into()
     }
