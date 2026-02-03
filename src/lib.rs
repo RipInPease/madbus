@@ -5,7 +5,7 @@ pub(crate) mod helpers;
 /// Holds commands and respoonses
 /// 
 mod function_codes;
-pub use function_codes::{PduCommand, PduResponse};
+pub use function_codes::{Command, Response};
 
 use std::io::prelude::*;
 use std::io::Error as IOError;
@@ -83,7 +83,7 @@ pub struct Client;
 impl Client {
     /// Send a Request through a TcpStream to the Server(Slave)
     /// 
-    pub fn send_request(stream: &mut TcpStream, command: PduCommand, unit_id: u8) -> Result<(), IOError> {
+    pub fn send_request(stream: &mut TcpStream, command: Command, unit_id: u8) -> Result<(), IOError> {
         let header = 
             MBAPHeader{ 
                 transaction_id:1, 
@@ -107,7 +107,7 @@ impl Client {
     /// 
     /// Returns None if failed
     /// 
-    pub fn read_response(stream: &mut TcpStream) -> Option<(PduResponse, u8, u16)> {
+    pub fn read_response(stream: &mut TcpStream) -> Option<(Response, u8, u16)> {
         let reqeust = AduResponse::read_get(stream)?;
 
         Some((reqeust.response, reqeust.header.unit_id, reqeust.header.transaction_id))
@@ -127,7 +127,7 @@ impl Server {
     /// 
     /// Returns None if failed
     /// 
-    pub fn read_request(stream: &mut TcpStream) -> Option<(PduCommand, u8, u16)> {
+    pub fn read_request(stream: &mut TcpStream) -> Option<(Command, u8, u16)> {
         let reqeust = AduRequest::read_get(stream)?;
 
         Some((reqeust.command, reqeust.header.unit_id, reqeust.header.transaction_id))
@@ -142,7 +142,7 @@ impl Server {
     /// 
     /// Tid: The transaction ID of the response
     /// 
-    pub fn send_resp(stream: &mut TcpStream, response: PduResponse, uid: u8, tid: u16) -> Result<(), IOError> { 
+    pub fn send_resp(stream: &mut TcpStream, response: Response, uid: u8, tid: u16) -> Result<(), IOError> { 
         let header = MBAPHeader {
             transaction_id: tid,
             protocol_id: 0,
@@ -164,14 +164,14 @@ impl Server {
 #[derive(Clone, Debug)]
 struct AduRequest {
     header  : MBAPHeader,
-    command : PduCommand
+    command : Command
 }
 
 
 impl ReadGet for AduRequest {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
         let header = MBAPHeader::read_get(reader)?;
-        let command = PduCommand::read_get(reader)?;
+        let command = Command::read_get(reader)?;
 
         Some(Self{ header, command })
     }
@@ -202,14 +202,14 @@ impl Into<Vec<u8>> for AduRequest {
 #[derive(Clone, Debug)]
 struct AduResponse {
     header: MBAPHeader,
-    response: PduResponse,
+    response: Response,
 }
 
 
 impl ReadGet for AduResponse {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
         let header = MBAPHeader::read_get(reader)?;
-        let response = PduResponse::read_get(reader)?;
+        let response = Response::read_get(reader)?;
 
         Some(Self{ header, response })
     }
