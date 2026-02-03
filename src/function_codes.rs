@@ -390,13 +390,19 @@ pub enum PduResponse {
 
     /// Function code 15
     WriteMultCoil{
+        /// Starting address
         start: u16,
+
+        /// Numbers of coils forced
         count: u16
     },
 
     /// Function code 16
     WriteMultHolding{
+        /// Starting address
         start: u16,
+
+        /// Number of registers written
         count: u16,
     }
 }
