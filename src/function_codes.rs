@@ -411,28 +411,28 @@ pub enum PduResponse {
 impl PduResponse {
     pub fn read_coils(coils: &[bool]) -> Self {
         let mut status = Vec::with_capacity(coils.len());
-        status.clone_from_slice(coils);
+        status.extend_from_slice(coils);
 
         Self::ReadCoils { status }
     }
 
     pub fn read_di(di: &[bool]) -> Self {
         let mut status = Vec::with_capacity(di.len());
-        status.clone_from_slice(di);
+        status.extend_from_slice(di);
         
         Self::ReadDI { status }
     }
 
     pub fn read_holding(addresses: &[u16]) -> Self {
         let mut status = Vec::with_capacity(addresses.len());
-        status.clone_from_slice(addresses);
+        status.extend_from_slice(addresses);
         
         Self::ReadHolding { status }
     }
 
     pub fn read_input(addresses: &[u16]) -> Self {
         let mut status = Vec::with_capacity(addresses.len());
-        status.clone_from_slice(addresses);
+        status.extend_from_slice(addresses);
         
         Self::ReadInput { status }
     }
