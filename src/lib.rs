@@ -7,6 +7,12 @@ pub(crate) mod helpers;
 mod function_codes;
 pub use function_codes::{Command, Response};
 
+
+/// Exception codes
+/// 
+mod exception_codes;
+pub use exception_codes::Exception;
+
 use std::io::prelude::*;
 use std::io::Error as IOError;
 use std::net::{
