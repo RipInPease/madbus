@@ -392,6 +392,12 @@ pub enum PduResponse {
     WriteMultCoil{
         start: u16,
         count: u16
+    },
+
+    /// Function code 16
+    WriteMultHolding{
+        start: u16,
+        count: u16,
     }
 }
 
@@ -435,6 +441,10 @@ impl PduResponse {
 
     pub fn write_mult_coil(start: u16, count: u16) -> Self {
         Self::WriteMultCoil { start, count }
+    }
+
+    pub fn write_mult_holding(start: u16, count: u16) -> Self {
+        Self::WriteMultHolding { start, count }
     }
 
 
@@ -482,7 +492,8 @@ impl PduResponse {
             },
             PduResponse::WriteCoil{..} => 5, // Function code + addr + value
             PduResponse::WriteHolding{..} => 5, // Function code + addr + value
-            PduResponse::WriteMultCoil{..} => 5 // Function code + start + count
+            PduResponse::WriteMultCoil{..} => 5, // Function code + start + count
+            PduResponse::WriteMultHolding{..} => 5 // Function code + start + count
         }
     }
 }
@@ -616,6 +627,18 @@ impl Into<Vec<u8>> for &PduResponse {
 
                 // Function code
                 v.push(15);
+
+                v.extend_from_slice(&start.to_be_bytes());
+                v.extend_from_slice(&count.to_be_bytes());
+
+                v
+            },
+
+            PduResponse::WriteMultHolding { start, count } => {
+                let mut v = Vec::with_capacity(self.size() as usize);
+
+                // Function code
+                v.push(16);
 
                 v.extend_from_slice(&start.to_be_bytes());
                 v.extend_from_slice(&count.to_be_bytes());
@@ -784,6 +807,21 @@ impl ReadGet for PduResponse {
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::WriteMultCoil { start, count };
+                Some(cmd)
+            }
+
+            //Write mult holding
+            16 => {
+                let mut bfr = [0; 4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None,
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::WriteMultHolding { start, count };
                 Some(cmd)
             }
 
