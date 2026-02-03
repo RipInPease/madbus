@@ -386,6 +386,12 @@ pub enum PduResponse {
     WriteHolding{
         address: u16,
         value: u16
+    },
+
+    /// Function code 15
+    WriteMultCoil{
+        start: u16,
+        count: u16
     }
 }
 
@@ -425,6 +431,10 @@ impl PduResponse {
 
     pub fn write_holding(address: u16, value: u16) -> Self {
         Self::WriteHolding { address, value }
+    }
+
+    pub fn write_mult_coil(start: u16, count: u16) -> Self {
+        Self::WriteMultCoil { start, count }
     }
 
 
@@ -471,7 +481,8 @@ impl PduResponse {
                 size
             },
             PduResponse::WriteCoil{..} => 5, // Function code + addr + value
-            PduResponse::WriteHolding{..} => 5 // Function code + addr + value
+            PduResponse::WriteHolding{..} => 5, // Function code + addr + value
+            PduResponse::WriteMultCoil{..} => 5 // Function code + start + count
         }
     }
 }
@@ -555,7 +566,7 @@ impl Into<Vec<u8>> for &PduResponse {
                 let mut v = Vec::with_capacity(self.size() as usize);
 
                 // Function code
-                v.push(3);
+                v.push(4);
 
                 //Byte count
                 v.push(byte_count);
@@ -571,6 +582,9 @@ impl Into<Vec<u8>> for &PduResponse {
 
             PduResponse::WriteCoil { coil, state } => {
                 let mut v = Vec::with_capacity(self.size() as usize);
+
+                // Function code
+                v.push(5);
 
                 v.extend_from_slice(&coil.to_be_bytes());
 
@@ -588,8 +602,23 @@ impl Into<Vec<u8>> for &PduResponse {
             PduResponse::WriteHolding { address, value } => {
                 let mut v = Vec::with_capacity(self.size() as usize);
 
+                // Function code
+                v.push(6);
+
                 v.extend_from_slice(&address.to_be_bytes());
                 v.extend_from_slice(&value.to_be_bytes());
+
+                v
+            },
+
+            PduResponse::WriteMultCoil { start, count } => {
+                let mut v = Vec::with_capacity(self.size() as usize);
+
+                // Function code
+                v.push(15);
+
+                v.extend_from_slice(&start.to_be_bytes());
+                v.extend_from_slice(&count.to_be_bytes());
 
                 v
             }
@@ -740,6 +769,21 @@ impl ReadGet for PduResponse {
                 let value = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::WriteHolding { address, value };
+                Some(cmd)
+            },
+
+            //Write mult coils
+            15 => {
+                let mut bfr = [0; 4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None,
+                }
+
+                let start = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let count = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::WriteMultCoil { start, count };
                 Some(cmd)
             }
 
