@@ -375,6 +375,12 @@ pub enum PduResponse {
     ReadInput{
         status: Vec<u16>
     },
+
+    /// Function code 0x05
+    WriteCoil{
+        coil: u16,
+        state: bool
+    }
 }
 
 
@@ -405,6 +411,10 @@ impl PduResponse {
         status.clone_from_slice(addresses);
         
         Self::ReadInput { status }
+    }
+
+    pub fn write_coil(coil: u16, state: bool) -> Self {
+        Self::WriteCoil { coil, state }
     }
 
 
@@ -450,6 +460,7 @@ impl PduResponse {
                 size += status.len() as u16 * 2;
                 size
             },
+            PduResponse::WriteCoil{..} => 5 // Function code + addr + value
         }
     }
 }
@@ -472,8 +483,7 @@ impl Into<Vec<u8>> for &PduResponse {
                     status.len() as u8 / 8 + 1
                 };
 
-                //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(byte_count as usize + 2);
+                let mut v = Vec::with_capacity(self.size() as usize);
 
                 // Function code
                 v.push(1);
@@ -494,8 +504,7 @@ impl Into<Vec<u8>> for &PduResponse {
                     status.len() as u8 / 8 + 1
                 };
 
-                //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(byte_count as usize + 2);
+                let mut v = Vec::with_capacity(self.size() as usize);
 
                 // Function code
                 v.push(2);
@@ -512,8 +521,7 @@ impl Into<Vec<u8>> for &PduResponse {
             PduResponse::ReadHolding { status } => {
                 let byte_count = status.len() as u8 * 2;
 
-                //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(byte_count as usize + 2);
+                let mut v = Vec::with_capacity(self.size() as usize);
 
                 // Function code
                 v.push(3);
@@ -533,8 +541,7 @@ impl Into<Vec<u8>> for &PduResponse {
             PduResponse::ReadInput { status } => {
                 let byte_count = status.len() as u8 * 2;
 
-                //The byte count + the byte count itself + function code
-                let mut v = Vec::with_capacity(byte_count as usize + 2);
+                let mut v = Vec::with_capacity(self.size() as usize);
 
                 // Function code
                 v.push(3);
@@ -546,6 +553,22 @@ impl Into<Vec<u8>> for &PduResponse {
                 for word in status {
                     let bytes = word.to_be_bytes();
                     v.extend_from_slice(&bytes);
+                }
+
+                v
+            },
+
+            PduResponse::WriteCoil { coil, state } => {
+                let mut v = Vec::with_capacity(self.size() as usize);
+
+                v.extend_from_slice(&coil.to_be_bytes());
+
+                if *state {
+                    v.push(0xff);
+                    v.push(0x00);
+                } else {
+                    v.push(0x00);
+                    v.push(0x00);
                 }
 
                 v
@@ -661,6 +684,29 @@ impl ReadGet for PduResponse {
                 let response = Self::ReadInput { status };
                 Some(response)
             },
+
+            //Write coil
+            5 => {
+                let mut bfr = [0; 4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None,
+                }
+
+                let coil = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let state = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let state = if state == 0xFF00 {
+                    true
+                } else if state == 0x0000 {
+                    false
+                } else {
+                    return None
+                };
+
+                let cmd = Self::WriteCoil { coil, state };
+                Some(cmd)
+            }
 
             _ => None
         }
