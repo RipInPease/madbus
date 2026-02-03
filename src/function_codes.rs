@@ -380,6 +380,12 @@ pub enum PduResponse {
     WriteCoil{
         coil: u16,
         state: bool
+    },
+
+    /// Function code 0x06
+    WriteHolding{
+        address: u16,
+        value: u16
     }
 }
 
@@ -415,6 +421,10 @@ impl PduResponse {
 
     pub fn write_coil(coil: u16, state: bool) -> Self {
         Self::WriteCoil { coil, state }
+    }
+
+    pub fn write_holding(address: u16, value: u16) -> Self {
+        Self::WriteHolding { address, value }
     }
 
 
@@ -460,7 +470,8 @@ impl PduResponse {
                 size += status.len() as u16 * 2;
                 size
             },
-            PduResponse::WriteCoil{..} => 5 // Function code + addr + value
+            PduResponse::WriteCoil{..} => 5, // Function code + addr + value
+            PduResponse::WriteHolding{..} => 5 // Function code + addr + value
         }
     }
 }
@@ -570,6 +581,15 @@ impl Into<Vec<u8>> for &PduResponse {
                     v.push(0x00);
                     v.push(0x00);
                 }
+
+                v
+            },
+
+            PduResponse::WriteHolding { address, value } => {
+                let mut v = Vec::with_capacity(self.size() as usize);
+
+                v.extend_from_slice(&address.to_be_bytes());
+                v.extend_from_slice(&value.to_be_bytes());
 
                 v
             }
@@ -705,6 +725,21 @@ impl ReadGet for PduResponse {
                 };
 
                 let cmd = Self::WriteCoil { coil, state };
+                Some(cmd)
+            },
+
+            //Write holding
+            6 => {
+                let mut bfr = [0; 4];
+                match reader.read(&mut bfr) {
+                    Ok(count) => if count < 4 { return None },
+                    Err(_)    => return None,
+                }
+
+                let address = u16::from_be_bytes([bfr[0], bfr[1]]);
+                let value = u16::from_be_bytes([bfr[2], bfr[3]]);
+
+                let cmd = Self::WriteHolding { address, value };
                 Some(cmd)
             }
 
