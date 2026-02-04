@@ -28,11 +28,15 @@ pub enum Exception {
 
     /// std::io::Error
     IOError(std::io::Error),
+
+    /// Failed to read the necessary bytes for the full transmission
+    FailedRead
 }
 
 
 impl Exception {
     /// Gives the associated exception code
+    /// 
     pub fn code(&self) -> u8 {
         match self {
             Self::IllegalCode       => 0x01,
@@ -43,7 +47,8 @@ impl Exception {
             Self::ServerBusy        => 0x06,
             Self::GatewayUnavail    => 0x0A,
             Self::BadDevice         => 0x0B,
-            Self::IOError(_)        => 0x00,
+            Self::IOError(_)        => 0xFF,
+            Self::FailedRead        => 0xFF,
         }
     }
 }
