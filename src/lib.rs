@@ -162,6 +162,46 @@ impl Server {
 
         Ok(())
     }
+
+
+    /// Send an exception over a TcpStream to the Client(Master)
+    /// 
+    /// Exception: The exception to be sent
+    /// 
+    /// Function_code: The function code that caused the exception
+    /// 
+    /// Uid: The unit_id the exception was from sent from
+    /// 
+    /// Tid: The transaction ID of the Exception
+    /// 
+    pub fn send_exception(
+        stream: &mut TcpStream, 
+        exception: Exception, 
+        function_code: u8,
+        uid: u8, 
+        tid: u16 )-> Result<(), IOError> 
+    
+    {
+        let header = MBAPHeader {
+            transaction_id: tid,
+            protocol_id: 0x00,
+            length: 3,
+            unit_id: uid
+        };
+
+        let header: Vec<u8> = header.into(); 
+        let function_code = function_code + 0x80;
+        let exception = exception.code();
+
+        let mut data = Vec::with_capacity(9);
+        data.extend_from_slice(&header);
+        data.push(function_code);
+        data.push(exception);
+
+        stream.write(&data)?;
+
+        Ok(())
+    }
 }
 
 

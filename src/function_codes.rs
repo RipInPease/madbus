@@ -70,6 +70,30 @@ impl ReadGet for Command {
         let function_code = bfr[0];
 
         match function_code {
+            // Exception code for read coils
+            0x81 => Err(read_exception(reader)),
+
+            // Exception code for read DI
+            0x82 => Err(read_exception(reader)),
+
+            // Exception code for read holding
+            0x83 => Err(read_exception(reader)),
+
+            // Exception code for read input
+            0x84 => Err(read_exception(reader)),
+
+            // Exception code for write coil
+            0x85 => Err(read_exception(reader)),
+
+            // Exception code write holding
+            0x86 => Err(read_exception(reader)),
+
+            // Exception code for write mult coil
+            0x8F => Err(read_exception(reader)),
+
+            // Exception code for write mult holding
+            0x90 => Err(read_exception(reader)),
+
             // Read Coils
             1 => {
                 let mut bfr = [0;4];
