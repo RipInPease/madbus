@@ -22,10 +22,10 @@ use std::net::{
 
 /// A type can be constructed from bytes read from a reader.
 /// 
-/// Return NONE if any error occured, else returns Self
+/// Return Exception if any error occured
 /// 
 pub(crate) trait ReadGet {
-    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized;
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized;
 }
 
 
@@ -41,12 +41,12 @@ pub(crate) struct MBAPHeader {
 
 
 impl ReadGet for MBAPHeader {
-    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0;7];
 
         match reader.read(&mut bfr) {
-            Ok(count) => if count < 7 { return None },
-            Err(_)    => return None
+            Ok(count) => if count < 7 { return Err(Exception::FailedRead) },
+            Err(e)    => return Err(Exception::IOError(e))
         }
         
         let transaction_id = u16::from_be_bytes([bfr[0], bfr[1]]);
@@ -55,7 +55,7 @@ impl ReadGet for MBAPHeader {
         let unit_id = bfr[6];
 
         let header = Self{ transaction_id, protocol_id, length, unit_id };
-        Some(header)
+        Ok(header)
     }
 }
 
@@ -113,10 +113,10 @@ impl Client {
     /// 
     /// Returns None if failed
     /// 
-    pub fn read_response(stream: &mut TcpStream) -> Option<(Response, u8, u16)> {
+    pub fn read_response(stream: &mut TcpStream) -> Result<(Response, u8, u16), Exception> {
         let reqeust = AduResponse::read_get(stream)?;
 
-        Some((reqeust.response, reqeust.header.unit_id, reqeust.header.transaction_id))
+        Ok((reqeust.response, reqeust.header.unit_id, reqeust.header.transaction_id))
     }
 }
 
@@ -133,10 +133,10 @@ impl Server {
     /// 
     /// Returns None if failed
     /// 
-    pub fn read_request(stream: &mut TcpStream) -> Option<(Command, u8, u16)> {
+    pub fn read_request(stream: &mut TcpStream) -> Result<(Command, u8, u16), Exception> {
         let reqeust = AduRequest::read_get(stream)?;
 
-        Some((reqeust.command, reqeust.header.unit_id, reqeust.header.transaction_id))
+        Ok((reqeust.command, reqeust.header.unit_id, reqeust.header.transaction_id))
     }
 
 
@@ -175,11 +175,11 @@ struct AduRequest {
 
 
 impl ReadGet for AduRequest {
-    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let header = MBAPHeader::read_get(reader)?;
         let command = Command::read_get(reader)?;
 
-        Some(Self{ header, command })
+        Ok(Self{ header, command })
     }
 }
 
@@ -213,11 +213,11 @@ struct AduResponse {
 
 
 impl ReadGet for AduResponse {
-    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let header = MBAPHeader::read_get(reader)?;
         let response = Response::read_get(reader)?;
 
-        Some(Self{ header, response })
+        Ok(Self{ header, response })
     }
 }
 

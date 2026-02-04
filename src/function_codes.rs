@@ -1,4 +1,4 @@
-use crate::ReadGet;
+use crate::{Exception, ReadGet};
 use std::io::prelude::*;
 
 use crate::helpers::*;
@@ -60,12 +60,12 @@ pub enum Command {
 
 
 impl ReadGet for Command {
-    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0];
 
         match reader.read(&mut bfr) {
-            Ok(count) => if count < 1 { return None },
-            Err(_)    => return None
+            Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
+            Err(e)    => return Err(Exception::IOError(e))
         }
         let function_code = bfr[0];
 
@@ -74,68 +74,68 @@ impl ReadGet for Command {
             1 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::ReadCoils { start, count };
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Read DI
             2 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::ReadDI { start, count };
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Read Holding
             3 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::ReadHolding { start, count };
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Read Input
             4 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::ReadInput { start, count };
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Write single coil
             5 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let coil = u16::from_be_bytes([bfr[0], bfr[1]]);
@@ -146,34 +146,34 @@ impl ReadGet for Command {
                 } else if state == 0x0000 {
                     false
                 } else {
-                    return None
+                    return Err(Exception::FailedRead)
                 };
 
                 let cmd = Self::WriteCoil { coil, state };
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Write single holding
             6 => {
                 let mut bfr = [0;4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let address = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let value = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::WriteHolding {address, value};
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Write multiple coils
             15 => {
                 let mut bfr = [0;5];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 5 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 5 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
@@ -182,23 +182,23 @@ impl ReadGet for Command {
 
                 let mut bfr = vec![0;byte_count];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < byte_count { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let vals = bytes_to_bools(&bfr);
 
                 let cmd = Self::WriteMultCoil{start, count, vals};
 
-                Some(cmd)
+                Ok(cmd)
             },
 
             // Write multiple holding
             16 => {
                 let mut bfr = [0;5];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 5 { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < 5 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
@@ -207,8 +207,8 @@ impl ReadGet for Command {
 
                 let mut bfr = vec![0;byte_count];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < byte_count { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let mut vals = Vec::with_capacity(byte_count as usize / 2);
@@ -219,10 +219,10 @@ impl ReadGet for Command {
 
                 let cmd = Self::WriteMultHolding { start, count, vals };
 
-                Some(cmd)
+                Ok(cmd)
             }
 
-            _ => None
+            _ => Err(Exception::FailedRead)
         }
 
     }
@@ -657,12 +657,12 @@ impl Into<Vec<u8>> for &Response {
 
 
 impl ReadGet for Response {
-    fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized {
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0];
 
         match reader.read(&mut bfr) {
-            Ok(count) => if count < 1 { return None },
-            Err(_)    => return None,
+            Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
+            Err(e)    => return Err(Exception::IOError(e))
         }
         let function_code = bfr[0];
 
@@ -671,60 +671,60 @@ impl ReadGet for Response {
             1 => {
                 let mut bfr = [0];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let status = bytes_to_bools(&bfr);
                 
                 let response = Self::ReadCoils { status };
-                Some(response)
+                Ok(response)
             },
 
             //Read DI
             2 => {
                 let mut bfr = [0];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let status = bytes_to_bools(&bfr);
                 
                 let response = Self::ReadDI { status };
-                Some(response)
+                Ok(response)
             },
 
             //Read Holding
             3 => {
                 let mut bfr = [0];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize * 2];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let mut status = Vec::with_capacity(byte_count as usize / 2);
@@ -734,23 +734,23 @@ impl ReadGet for Response {
                 }
                 
                 let response = Self::ReadHolding { status };
-                Some(response)
+                Ok(response)
             },
 
             //Read Input
             4 => {
                 let mut bfr = [0];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize * 2];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return None },
-                    Err(_)    => return None
+                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let mut status = Vec::with_capacity(byte_count as usize / 2);
@@ -760,15 +760,15 @@ impl ReadGet for Response {
                 }
                 
                 let response = Self::ReadInput { status };
-                Some(response)
+                Ok(response)
             },
 
             //Write coil
             5 => {
                 let mut bfr = [0; 4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let coil = u16::from_be_bytes([bfr[0], bfr[1]]);
@@ -779,59 +779,59 @@ impl ReadGet for Response {
                 } else if state == 0x0000 {
                     false
                 } else {
-                    return None
+                    return Err(Exception::FailedRead)
                 };
 
                 let cmd = Self::WriteCoil { coil, state };
-                Some(cmd)
+                Ok(cmd)
             },
 
             //Write holding
             6 => {
                 let mut bfr = [0; 4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let address = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let value = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::WriteHolding { address, value };
-                Some(cmd)
+                Ok(cmd)
             },
 
             //Write mult coils
             15 => {
                 let mut bfr = [0; 4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::WriteMultCoil { start, count };
-                Some(cmd)
+                Ok(cmd)
             }
 
             //Write mult holding
             16 => {
                 let mut bfr = [0; 4];
                 match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return None },
-                    Err(_)    => return None,
+                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
+                    Err(e)    => return Err(Exception::IOError(e))
                 }
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
 
                 let cmd = Self::WriteMultHolding { start, count };
-                Some(cmd)
+                Ok(cmd)
             }
 
-            _ => None
+            _ => Err(Exception::FailedRead)
         }
     }
 }

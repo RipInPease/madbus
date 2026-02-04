@@ -29,7 +29,7 @@ pub enum Exception {
     /// std::io::Error
     IOError(std::io::Error),
 
-    /// Failed to read the necessary bytes for the full transmission
+    /// Failed to read the necessary bytes for the full transmission or the bytes read are not not in accordance to the Modbus Protocol
     FailedRead
 }
 
