@@ -1,30 +1,33 @@
 /// Exception codes explaining possible causes of failure
 /// 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum Exception {
     /// The function code is unknown by the server
-    IllegalCode = 0x01,
+    IllegalCode,
 
     /// Dependant on the request
-    IllegalAddress = 0x02,
+    IllegalAddress,
 
     /// Dependant on the request
-    IllegalDataValue = 0x03,
+    IllegalDataValue,
 
     /// The server failed during the exception
-    ServerFailure = 0x04,
+    ServerFailure,
 
     /// The server accepted the request, but requires a long time to execute
-    Acknowledge = 0x05,
+    Acknowledge,
 
     /// The server was unable to accept request
-    ServerBusy = 0x06,
+    ServerBusy,
 
     /// Gateway paths not available
-    GatewayUnavail = 0x0A,
+    GatewayUnavail,
 
     /// The targeted device failed to respond
-    BadDevice = 0x0B
+    BadDevice,
+
+    /// std::io::Error
+    IOError(std::io::Error),
 }
 
 
@@ -40,6 +43,7 @@ impl Exception {
             Self::ServerBusy        => 0x06,
             Self::GatewayUnavail    => 0x0A,
             Self::BadDevice         => 0x0B,
+            Self::IOError(_)        => 0x00,
         }
     }
 }
