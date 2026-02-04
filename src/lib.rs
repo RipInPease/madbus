@@ -24,7 +24,7 @@ use std::net::{
 /// 
 /// Return NONE if any error occured, else returns Self
 /// 
-pub trait ReadGet {
+pub(crate) trait ReadGet {
     fn read_get(reader: &mut impl Read) -> Option<Self> where Self: Sized;
 }
 
