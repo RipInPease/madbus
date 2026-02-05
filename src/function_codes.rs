@@ -62,11 +62,8 @@ pub enum Command {
 impl ReadGet for Command {
     fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0];
+        read_bfr(reader, &mut bfr)?;
 
-        match reader.read(&mut bfr) {
-            Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
-            Err(e)    => return Err(Exception::IOError(e))
-        }
         let function_code = bfr[0];
 
         match function_code {
@@ -184,10 +181,7 @@ impl ReadGet for Command {
                 let byte_count = bfr[4] as usize;
 
                 let mut bfr = vec![0;byte_count];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let vals = bytes_to_bools(&bfr);
 

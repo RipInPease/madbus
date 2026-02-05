@@ -92,11 +92,7 @@ impl TryFrom<u8> for Exception {
 impl ReadGet for Exception {
     fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0];
-
-        match reader.read(&mut bfr) {
-            Ok(count) => if count < 1 { return Ok(Exception::FailedRead) },
-            Err(e) => return Ok(Exception::IOError(e))
-        }
+        read_bfr(reader, &mut bfr)?;
 
         match Exception::try_from(bfr[0]) {
             Ok(exception) => Ok(exception),
