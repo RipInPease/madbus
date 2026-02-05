@@ -1,6 +1,7 @@
 /// Helper tools and functions to be used within the crate
 /// 
 pub(crate) mod helpers;
+use helpers::*;
 
 /// Holds commands and respoonses
 /// 
@@ -43,11 +44,7 @@ pub(crate) struct MBAPHeader {
 impl ReadGet for MBAPHeader {
     fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0;7];
-
-        match reader.read(&mut bfr) {
-            Ok(count) => if count < 7 { return Err(Exception::FailedRead) },
-            Err(e)    => return Err(Exception::IOError(e))
-        }
+        read_bfr(reader, &mut bfr)?;
         
         let transaction_id = u16::from_be_bytes([bfr[0], bfr[1]]);
         let protocol_id = u16::from_be_bytes([bfr[2], bfr[3]]);

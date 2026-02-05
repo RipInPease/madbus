@@ -45,20 +45,15 @@ pub fn bytes_to_bools(bytes: &[u8]) -> Vec<bool> {
 }
 
 
-/// Read an exception code from a reader
+/// Reads the exact amount of bytes in a buffer, if any error occured returns Exception
 /// 
-pub fn read_exception<R: Read>(reader: &mut R) -> Exception {
-    let mut bfr = [0];
-
-    match reader.read(&mut bfr) {
-        Ok(count) => if count < 1 { return Exception::FailedRead },
-        Err(e) => return Exception::IOError(e)
+pub fn read_bfr<R: Read>(reader: &mut R, bfr: &mut [u8]) -> Result<(), Exception> {
+    match reader.read(bfr) {
+        Ok(count) => if count < bfr.len() { return Err(Exception::FailedRead) },
+        Err(e)    => return Err(Exception::IOError(e))
     }
 
-    match Exception::try_from(bfr[0]) {
-        Ok(exception) => exception,
-        Err(_) => Exception::FailedRead
-    }
+    Ok(())
 }
 
 

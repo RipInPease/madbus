@@ -1,3 +1,5 @@
+use crate::*;
+
 /// Exception codes explaining possible causes of failure
 /// 
 #[derive(Debug)]
@@ -82,6 +84,23 @@ impl TryFrom<u8> for Exception {
             0x0A => Ok(Self::GatewayUnavail),
             0x0B => Ok(Self::BadDevice),
             _    => Err(())
+        }
+    }
+}
+
+
+impl ReadGet for Exception {
+    fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
+        let mut bfr = [0];
+
+        match reader.read(&mut bfr) {
+            Ok(count) => if count < 1 { return Ok(Exception::FailedRead) },
+            Err(e) => return Ok(Exception::IOError(e))
+        }
+
+        match Exception::try_from(bfr[0]) {
+            Ok(exception) => Ok(exception),
+            Err(_) => Ok(Exception::FailedRead)
         }
     }
 }

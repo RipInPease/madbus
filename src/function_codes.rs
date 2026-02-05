@@ -71,36 +71,33 @@ impl ReadGet for Command {
 
         match function_code {
             // Exception code for read coils
-            0x81 => Err(read_exception(reader)),
+            0x81 => Err(Exception::read_get(reader)?),
 
             // Exception code for read DI
-            0x82 => Err(read_exception(reader)),
+            0x82 => Err(Exception::read_get(reader)?),
 
             // Exception code for read holding
-            0x83 => Err(read_exception(reader)),
+            0x83 => Err(Exception::read_get(reader)?),
 
             // Exception code for read input
-            0x84 => Err(read_exception(reader)),
+            0x84 => Err(Exception::read_get(reader)?),
 
             // Exception code for write coil
-            0x85 => Err(read_exception(reader)),
+            0x85 => Err(Exception::read_get(reader)?),
 
             // Exception code write holding
-            0x86 => Err(read_exception(reader)),
+            0x86 => Err(Exception::read_get(reader)?),
 
             // Exception code for write mult coil
-            0x8F => Err(read_exception(reader)),
+            0x8F => Err(Exception::read_get(reader)?),
 
             // Exception code for write mult holding
-            0x90 => Err(read_exception(reader)),
+            0x90 => Err(Exception::read_get(reader)?),
 
             // Read Coils
             1 => {
                 let mut bfr = [0;4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -112,10 +109,7 @@ impl ReadGet for Command {
             // Read DI
             2 => {
                 let mut bfr = [0;4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -127,10 +121,7 @@ impl ReadGet for Command {
             // Read Holding
             3 => {
                 let mut bfr = [0;4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -142,10 +133,7 @@ impl ReadGet for Command {
             // Read Input
             4 => {
                 let mut bfr = [0;4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -157,10 +145,7 @@ impl ReadGet for Command {
             // Write single coil
             5 => {
                 let mut bfr = [0;4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let coil = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let state = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -180,10 +165,7 @@ impl ReadGet for Command {
             // Write single holding
             6 => {
                 let mut bfr = [0;4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let address = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let value = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -195,10 +177,7 @@ impl ReadGet for Command {
             // Write multiple coils
             15 => {
                 let mut bfr = [0;5];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 5 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -220,20 +199,14 @@ impl ReadGet for Command {
             // Write multiple holding
             16 => {
                 let mut bfr = [0;5];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 5 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
                 let byte_count = bfr[4] as usize;
 
                 let mut bfr = vec![0;byte_count];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let mut vals = Vec::with_capacity(byte_count as usize / 2);
                 for bytes in bfr.windows(2).step_by(2) {
@@ -683,29 +656,20 @@ impl Into<Vec<u8>> for &Response {
 impl ReadGet for Response {
     fn read_get(reader: &mut impl Read) -> Result<Self, Exception> where Self: Sized {
         let mut bfr = [0];
+        read_bfr(reader, &mut bfr)?;
 
-        match reader.read(&mut bfr) {
-            Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
-            Err(e)    => return Err(Exception::IOError(e))
-        }
         let function_code = bfr[0];
 
         match function_code {
             //Read coils
             1 => {
                 let mut bfr = [0];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let status = bytes_to_bools(&bfr);
                 
@@ -716,18 +680,12 @@ impl ReadGet for Response {
             //Read DI
             2 => {
                 let mut bfr = [0];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let status = bytes_to_bools(&bfr);
                 
@@ -738,18 +696,12 @@ impl ReadGet for Response {
             //Read Holding
             3 => {
                 let mut bfr = [0];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize * 2];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let mut status = Vec::with_capacity(byte_count as usize / 2);
                 for bytes in bfr.windows(2).step_by(2) {
@@ -764,18 +716,12 @@ impl ReadGet for Response {
             //Read Input
             4 => {
                 let mut bfr = [0];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 1 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let byte_count = bfr[0];
 
                 let mut bfr = vec![0; byte_count as usize * 2];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < byte_count as usize { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let mut status = Vec::with_capacity(byte_count as usize / 2);
                 for bytes in bfr.windows(2).step_by(2) {
@@ -790,10 +736,7 @@ impl ReadGet for Response {
             //Write coil
             5 => {
                 let mut bfr = [0; 4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let coil = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let state = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -813,10 +756,7 @@ impl ReadGet for Response {
             //Write holding
             6 => {
                 let mut bfr = [0; 4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let address = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let value = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -828,10 +768,7 @@ impl ReadGet for Response {
             //Write mult coils
             15 => {
                 let mut bfr = [0; 4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
@@ -843,10 +780,7 @@ impl ReadGet for Response {
             //Write mult holding
             16 => {
                 let mut bfr = [0; 4];
-                match reader.read(&mut bfr) {
-                    Ok(count) => if count < 4 { return Err(Exception::FailedRead) },
-                    Err(e)    => return Err(Exception::IOError(e))
-                }
+                read_bfr(reader, &mut bfr)?;
 
                 let start = u16::from_be_bytes([bfr[0], bfr[1]]);
                 let count = u16::from_be_bytes([bfr[2], bfr[3]]);
