@@ -67,30 +67,6 @@ impl ReadGet for Command {
         let function_code = bfr[0];
 
         match function_code {
-            // Exception code for read coils
-            0x81 => Err(Exception::read_get(reader)?),
-
-            // Exception code for read DI
-            0x82 => Err(Exception::read_get(reader)?),
-
-            // Exception code for read holding
-            0x83 => Err(Exception::read_get(reader)?),
-
-            // Exception code for read input
-            0x84 => Err(Exception::read_get(reader)?),
-
-            // Exception code for write coil
-            0x85 => Err(Exception::read_get(reader)?),
-
-            // Exception code write holding
-            0x86 => Err(Exception::read_get(reader)?),
-
-            // Exception code for write mult coil
-            0x8F => Err(Exception::read_get(reader)?),
-
-            // Exception code for write mult holding
-            0x90 => Err(Exception::read_get(reader)?),
-
             // Read Coils
             1 => {
                 let mut bfr = [0;4];
@@ -655,6 +631,30 @@ impl ReadGet for Response {
         let function_code = bfr[0];
 
         match function_code {
+            // Exception code for read coils
+            0x81 => Err(Exception::read_get(reader)?),
+
+            // Exception code for read DI
+            0x82 => Err(Exception::read_get(reader)?),
+
+            // Exception code for read holding
+            0x83 => Err(Exception::read_get(reader)?),
+
+            // Exception code for read input
+            0x84 => Err(Exception::read_get(reader)?),
+
+            // Exception code for write coil
+            0x85 => Err(Exception::read_get(reader)?),
+
+            // Exception code write holding
+            0x86 => Err(Exception::read_get(reader)?),
+
+            // Exception code for write mult coil
+            0x8F => Err(Exception::read_get(reader)?),
+
+            // Exception code for write mult holding
+            0x90 => Err(Exception::read_get(reader)?),
+
             //Read coils
             1 => {
                 let mut bfr = [0];
