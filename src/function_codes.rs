@@ -694,7 +694,7 @@ impl ReadGet for Response {
 
                 let byte_count = bfr[0];
 
-                let mut bfr = vec![0; byte_count as usize * 2];
+                let mut bfr = vec![0; byte_count as usize];
                 read_bfr(reader, &mut bfr)?;
 
                 let mut status = Vec::with_capacity(byte_count as usize / 2);
@@ -714,7 +714,7 @@ impl ReadGet for Response {
 
                 let byte_count = bfr[0];
 
-                let mut bfr = vec![0; byte_count as usize * 2];
+                let mut bfr = vec![0; byte_count as usize];
                 read_bfr(reader, &mut bfr)?;
 
                 let mut status = Vec::with_capacity(byte_count as usize / 2);
