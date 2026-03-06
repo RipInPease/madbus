@@ -1,6 +1,6 @@
 [package]
 name = "madbus"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2024"
 description = "A modbus TCP driver written entirely in Rust"
 homepage = "https://github.com/RipInPease/madbus"
