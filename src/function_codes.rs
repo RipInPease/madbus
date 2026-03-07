@@ -243,6 +243,103 @@ impl Command {
             }
         }
     }
+
+
+    /// Returns the read_coil values, consuming self
+    /// Panics if type is not read_coil
+    /// 
+    /// The values returned are (start, count)
+    /// 
+    pub fn unwrap_read_coil(self) -> (u16, u16) {
+        match self {
+            Self::ReadCoils { start, count } => (start, count),
+            _ => panic!("Called unwrap_read_coil on non read_coil type")
+        }
+    }
+
+    /// Returns the read_di values, consuming self
+    /// Panics if type is not read_di
+    /// 
+    /// The values returned are (start, count)
+    /// 
+    pub fn unwrap_read_di(self) -> (u16, u16) {
+        match self {
+            Self::ReadDI { start, count } => (start, count),
+            _ => panic!("Called unwrap_read_di on non read_di type")
+        }
+    }
+
+    /// Returns the read_holding values, consuming self
+    /// Panics if type is not read_holding
+    /// 
+    /// The values returned are (start, count)
+    /// 
+    pub fn unwrap_read_holding(self) -> (u16, u16) {
+        match self {
+            Self::ReadHolding { start, count } => (start, count),
+            _ => panic!("Called unwrap_read_holding on non read_holding type")
+        }
+    }
+
+    /// Returns the read_input values, consuming self
+    /// Panics if type is not read_holding
+    /// 
+    /// The values returned are (start, count)
+    /// 
+    pub fn unwrap_read_input(self) -> (u16, u16) {
+        match self {
+            Self::ReadInput { start, count } => (start, count),
+            _ => panic!("Called unwrap_read_input on non read_input type")
+        }
+    }
+
+    /// Returns the write_coil values, consuming self
+    /// Panics if type is not write_coil
+    /// 
+    /// The values returned are (coil, state)
+    /// 
+    pub fn unwrap_write_coil(self) -> (u16, bool) {
+        match self {
+            Self::WriteCoil { coil, state } => (coil, state),
+            _ => panic!("Called unwrap_write_coil on non write_coil type")
+        }
+    }
+
+    /// Returns the write_holding values, consuming self
+    /// Panics if type is not write_holding
+    /// 
+    /// The values returned are (address, value)
+    /// 
+    pub fn unwrap_write_holding(self) -> (u16, u16) {
+        match self {
+            Self::WriteHolding { address, value } => (address, value),
+            _ => panic!("Called unwrap_write_holding on non write_holding type")
+        }
+    }
+
+    /// Returns the write_mult_coil values, consuming self
+    /// Panics if type is not write_mult_coil
+    /// 
+    /// The values returned are (start, count, vals)
+    /// 
+    pub fn unwrap_write_mult_coil(self) -> (u16, u16, Vec<bool>) {
+        match self {
+            Self::WriteMultCoil { start, count, vals } => (start, count, vals),
+            _ => panic!("Called unwrap_write_mult_coil on non write_mult_coil type")
+        }
+    }
+
+    /// Returns the write_mult_holding values, consuming self
+    /// Panics if type is not write_mult_holding
+    /// 
+    /// The values returned are (start, count, vals)
+    /// 
+    pub fn unwrap_write_mult_holding(self) -> (u16, u16, Vec<u16>) {
+        match self {
+            Self::WriteMultHolding { start, count, vals } => (start, count, vals),
+            _ => panic!("Called unwrap_write_mult_holding on non write_mult_holding type")
+        }
+    }
 }
 
 
