@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 /// Helper tools and functions to be used within the crate
 /// 
 pub(crate) mod helpers;
